@@ -1,7 +1,7 @@
 "use client";
 
 import Modal from './Modal';
-import { formatDate } from "~/app/utils/dateService";
+import { formatDate, dbRecurrenceToForm } from "~/app/utils/dateService";
 import { EventType } from '../types/EventType';
 import axios from "axios";
 import { User } from 'lucide-react';
@@ -10,6 +10,8 @@ import { useEffect, useState } from 'react';
 import { userAgent } from 'next/server';
 // import ModalEventUpdate from './ModalEventUpdate';
 import { useEventState } from "../../context/EventStateContext";
+import { RecurrenceInput } from '../utils/types';
+import dayjs from 'dayjs';
 
 type ModalEventProps = {
     show: boolean;
@@ -39,14 +41,17 @@ function SkeletonEventDetails() {
 }
 
 
-export default function ModalEvent({ show, onClose, savedEventDetails }: ModalEventProps) {    
+export default function ModalEvent({ show, onClose }: ModalEventProps) {    
     const { user } = useUser();
     const { selectedEvent, openUpdate, toggleAdded, savedEventIds } = useEventState();
-    const [eventDetails, setEventDetails] = useState<EventType | null>(savedEventDetails || null);
+    const [eventDetails, setEventDetails] = useState<EventType | null>(null);
     const [selectedTags, setSelectedTags] = useState<Tag[]>([]);
-    console.log("🤔🤔🤔savedEventDetails", savedEventDetails, eventDetails)
+    const [recurrenceRule, setRecurrenceRule] = useState<RecurrenceInput | null>(null);
+    const [repeat, setRepeat] = useState<string>("none");
+    console.log("🤔🤔🤔savedEventDetails", eventDetails)
     const [loadingEvent, setLoadingEvent] = useState(false);
     const [loadingTags, setLoadingTags] = useState(false);
+    
 
     const eventId = selectedEvent;
     
@@ -76,13 +81,15 @@ export default function ModalEvent({ show, onClose, savedEventDetails }: ModalEv
                 }
             }
             fetchEventDetails();
+            console.log("[edit] fetched event details", show, eventDetails)
         }
     }, [eventId, eventDetails])
 
     useEffect(() => {
         setLoadingTags(true);
-        const fetchTag = async() => {
+        const fetchTagAndRecurrence = async() => {
             try {
+                // Fetching tags
                 const tagRes = await axios.get(`http://localhost:5001/api/events/${eventId}/tags`, {
                     withCredentials: true,
                 });
@@ -93,30 +100,69 @@ export default function ModalEvent({ show, onClose, savedEventDetails }: ModalEv
                         name: tag.name.toLowerCase(),
                     }))
                 );
+                
+                // Fetching recurrence rule
+                const emptyRecurrenceInput = {
+                    frequency: "WEEKLY",
+                    interval: 1,
+                    selectedDays: [1, 2, 3, 4, 5],
+                    ends: "never",
+                    endDate: null,
+                    occurrences: 13,
+                    startDatetime: eventDetails?.start_datetime ?? dayjs(),
+                    eventId: selectedEvent,
+                    nthWeek: null, 
+                }
+                const recurrenceRuleRes = await axios.get(`http://localhost:5001/api/events/${eventId}/recurrence`, {
+                    withCredentials: true,
+                });
+                const recRuleData = recurrenceRuleRes.data
+                setRecurrenceRule(dbRecurrenceToForm(recRuleData) || emptyRecurrenceInput);
+                // Derive repeat from recurrence info
+                const repeat = !recRuleData
+                    ? "none"
+                    : recRuleData.count || recRuleData.until
+                        ? "custom"
+                        : recRuleData.frequency.toLowerCase();
+                // Merge into event object
+                // setEventDetails({
+                //     ...eventDetails,
+                //     repeat,
+                // });
+                // setEventDetails(prev => prev ? 
+                //     { ...prev, repeat } : prev);
+                setRepeat(repeat);
+
             } catch (err) {
                 console.error("Failed to fetch event tags for event: ", eventId, err);
             } finally { 
                 setLoadingTags(false);
             }
         }
-        fetchTag();        
-    }, [eventId, eventDetails])
+        // fetchTag(); 
+        // fetchRecurrence(); 
+        fetchTagAndRecurrence();
+        console.log("[edit] fetched tags and recurrence", show, selectedTags, recurrenceRule)      
+    }, [eventDetails])
+
 
 
 
 
     
-    console.log("show edit modal!!", show, eventDetails)
+    // console.log("show edit modal!!", show, eventDetails)
 
     return (
         <Modal show={show} onClose={onClose}>
             <div>
-                {/* loadingEvent: {loadingEvent ? "true" : "false" } */}
-                {/* loadingTags: {loadingTags ? "true" : "false" } */}
-                { (loadingEvent || loadingTags)
+                {/* loadingEvent: {loadingEvent ? "true" : "false" }
+                loadingTags: {loadingTags ? "true" : "false" } */}
+                { (loadingEvent || loadingTags )
+                // { loadingEvent
                     ? <SkeletonEventDetails/>
                     : <>
-                {eventDetails && (
+                {eventDetails ?
+                (
                     <>
                 <p className="text-lg">{eventDetails.title}</p>
                 <p className="text-base text-gray-500">{formatDate(eventDetails.start_datetime)} - {formatDate(eventDetails.end_datetime)}</p>
@@ -134,10 +180,11 @@ export default function ModalEvent({ show, onClose, savedEventDetails }: ModalEv
                    { savedEventIds.has(eventDetails.id) ? "Remove" : "Add" }
                 </button> 
                 <button className={`px-4 py-2 rounded-md ${ isAdmin ? "flex-1" : "hidden"}  bg-gray-200`}
-                    onClick={() => { openUpdate(eventDetails, selectedTags) }}>
+                    onClick={() => { openUpdate(eventDetails, selectedTags, recurrenceRule, repeat ) }}>
                     Edit Event
                 </button></div>
-                </>)}</>}
+                </>) :
+                <>Invalid event.</>}</>}
             </div>
         </Modal>
     )

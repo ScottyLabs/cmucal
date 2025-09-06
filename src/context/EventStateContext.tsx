@@ -4,6 +4,7 @@ import { useUser } from "@clerk/nextjs";
 import { EventType } from "../app/types/EventType";
 import { EventInput } from "@fullcalendar/core";
 import { List } from "lucide-react";
+import { RecurrenceInput } from "~/app/utils/types";
 
 export type ModalView = "details" | "update" | "pre_upload" | "upload" | "uploadLink" | null;
 type Tag = { id?: string; name: string };
@@ -172,10 +173,10 @@ export const useEventState = () => {
     context.setModalData({"savedEventDetails": savedEventDetails})
     context.setModalView("details");
   };
-  const openUpdate = (eventInfo: EventType, selectedTags: Tag[]) => {
+  const openUpdate = (eventInfo: EventType, selectedTags: Tag[], recurrenceRule: RecurrenceInput, oldRepeat: string) => {
     // context.setSelectedEvent(event_id);// no need since always routed from the details modal
-    
-    context.setModalData({"eventInfo": eventInfo, "selectedTags": selectedTags})
+    context.setModalData({"eventInfo": eventInfo, "selectedTags": selectedTags, 
+      "recurrenceRule": recurrenceRule, "oldRepeat": oldRepeat})
     console.log("opening update.... setting modal data", eventInfo)
     context.setModalView("update");
   };

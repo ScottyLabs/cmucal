@@ -42,7 +42,9 @@ export default function ModalRender() {
             {modalView==="update" && (
                 <ModalEventUpdate show={true} onClose={closeModal} 
                 oldEventInfo={modalData.eventInfo}
-                savedEventTags={modalData.selectedTags}/>
+                savedEventTags={modalData.selectedTags}
+                oldRecurrenceRule={modalData.recurrenceRule}
+                oldRepeat={modalData.oldRepeat}/>
             )}
             {modalView==="pre_upload" && (
                 <ModalUploadOne show={true} onClose={closeModal} />

@@ -14,4 +14,5 @@ export type EventType = {
   event_type?: string;
   user_saved?: boolean;
   user_is_admin?: boolean;
+  // repeat?: "none" | "daily" | "weekly" | "monthly" | "yearly" | "custom";
 };
