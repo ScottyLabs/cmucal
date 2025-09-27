@@ -19,6 +19,8 @@ type ModalEventProps = {
     // toggleAdded?: (eventId:number) => void;
     // eventId?: number|null;
     savedEventDetails?: EventType;
+    event_id?: number;
+    googleFields?: EventType;
 }
 type Tag = { id?: string; name: string };
 
@@ -41,9 +43,9 @@ function SkeletonEventDetails() {
 }
 
 
-export default function ModalEvent({ show, onClose }: ModalEventProps) {    
+export default function ModalEvent({ show, onClose, event_id, googleFields }: ModalEventProps) {    
     const { user } = useUser();
-    const { selectedEvent, openUpdate, toggleAdded, savedEventIds } = useEventState();
+    const { selectedEvent, openUpdate, toggleAdded, savedEventIds, modalData} = useEventState();
     const [eventDetails, setEventDetails] = useState<EventType | null>(null);
     const [selectedTags, setSelectedTags] = useState<Tag[]>([]);
     const [recurrenceRule, setRecurrenceRule] = useState<RecurrenceInput | null>(null);
@@ -52,21 +54,28 @@ export default function ModalEvent({ show, onClose }: ModalEventProps) {
     const [loadingEvent, setLoadingEvent] = useState(false);
     const [loadingTags, setLoadingTags] = useState(false);
     
-
-    const eventId = selectedEvent;
+    const event_occurrence_id = selectedEvent;
+    const eventId = event_id
+    console.log("🍊🍊🍊", event_occurrence_id, eventId);
     
     const isAdmin = eventDetails?.user_is_admin;
 
     useEffect(() => {
+        if (googleFields) setEventDetails(googleFields);
+    }, [googleFields]);
+
+    useEffect(() => {
         // get specific event with ID
-        if (!eventDetails) { 
+        if (!eventDetails && !googleFields) { 
+            console.log("🏃‍🏃‍🏃‍🏃‍🏃‍", googleFields, " || ", eventDetails);
             // TODO: i'd wanna have this so that it doesn't reload every time but we can think about this later
             // cuz currently the tags are not being passed through the modals and if i wanna keep them up to date i'll have to fetch
             // but i don't want it to load
             setLoadingEvent(true);
             const fetchEventDetails = async() => {
                 try {
-                    const eventRes = await axios.get(`http://localhost:5001//api/events/${eventId}`, {
+                    // const eventRes = await axios.get(`http://localhost:5001//api/events/${eventId}`, {
+                    const eventRes = await axios.get(`http://localhost:5001//api/events/occurrence/${event_occurrence_id}`, {
                         params: {
                             user_id: user?.id,
                         },
@@ -75,7 +84,7 @@ export default function ModalEvent({ show, onClose }: ModalEventProps) {
                     setEventDetails(eventRes.data)
                 
                 } catch (err) {
-                    console.error("Failed to fetch event details for event: ", eventId, err);
+                    console.error("Failed to fetch event details for event: ", event_occurrence_id, err);
                 } finally {
                     setLoadingEvent(false);
                 }
@@ -83,13 +92,15 @@ export default function ModalEvent({ show, onClose }: ModalEventProps) {
             fetchEventDetails();
             console.log("[edit] fetched event details", show, eventDetails)
         }
-    }, [eventId, eventDetails])
+    }, [event_occurrence_id, eventDetails])
 
     useEffect(() => {
+        if (!eventDetails && !googleFields) { 
         setLoadingTags(true);
         const fetchTagAndRecurrence = async() => {
             try {
-                // Fetching tags
+                // Fetching tags              
+                // const eventId = eventDetails.event_id;
                 const tagRes = await axios.get(`http://localhost:5001/api/events/${eventId}/tags`, {
                     withCredentials: true,
                 });
@@ -142,7 +153,7 @@ export default function ModalEvent({ show, onClose }: ModalEventProps) {
         // fetchTag(); 
         // fetchRecurrence(); 
         fetchTagAndRecurrence();
-        console.log("[edit] fetched tags and recurrence", show, selectedTags, recurrenceRule)      
+        console.log("[edit] fetched tags and recurrence", show, selectedTags, recurrenceRule)  }    
     }, [eventDetails])
 
 
