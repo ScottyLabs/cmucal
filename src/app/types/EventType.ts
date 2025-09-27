@@ -15,4 +15,5 @@ export type EventType = {
   user_saved?: boolean;
   user_is_admin?: boolean;
   // repeat?: "none" | "daily" | "weekly" | "monthly" | "yearly" | "custom";
+  event_id?: number; // slightly messy rn cuz of transition from events to event occurrences on some functions
 };
