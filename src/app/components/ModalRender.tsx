@@ -37,7 +37,9 @@ export default function ModalRender() {
                 //     Modal is showing!
                 // </div>
                 <ModalEvent show={true} onClose={closeModal}
-                savedEventDetails={modalData.savedEventDetails}/>
+                event_id={modalData.event_id}
+                savedEventDetails={modalData.savedEventDetails}
+                googleFields={modalData.googleFields}/>
             )}
             {modalView==="update" && (
                 <ModalEventUpdate show={true} onClose={closeModal} 
