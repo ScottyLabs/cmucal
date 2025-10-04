@@ -15,8 +15,9 @@ import Checkbox from '@mui/material/Checkbox';
 import { useGcalEvents } from "../../context/GCalEventsContext";
 import { formatGCalEvent } from "../utils/calendarUtils";
 import { CalendarFields } from "../utils/types";
-import { checkGoogleAuthStatus, fetchBulkEventsFromCalendars } from "../utils/api/googleCalendar";
+import { checkGoogleAuthStatus, fetchBulkEventsFromCalendars, unauthorizeGoogle } from "../utils/api/googleCalendar";
 import { API_BASE_URL } from "../utils/api/api";
+import Modal from "./Modal";
 
 
 const ITEM_HEIGHT = 48;
@@ -39,9 +40,16 @@ export function ConnectGoogleButton() {
   const [selectedCalendarIds, setSelectedCalendarIds] = useState<string[]>([]); // selected calendar IDs from dropdown
   const { gcalEvents, setGcalEvents } = useGcalEvents();
   const [cmuCalIds, setCMUCalIds] = useState<string[]>([]);
+  const [showImportSummary, setShowImportSummary] = useState(false);
 
   useEffect(() => {
     // Only runs on mount
+
+    // url params
+    const url = new URL(window.location.href);
+    console.log("HI" + url)
+    const justConnected = url.searchParams.get('justConnected');
+
     const checkAuthStatus = async () => {
       try {
         // const res = await fetch("http://localhost:5001/api/google/calendar/status", {
@@ -50,6 +58,13 @@ export function ConnectGoogleButton() {
         const { authorized } = await checkGoogleAuthStatus();
 
         setIsConnected(authorized);
+
+        // if the user just connected
+        if (authorized && justConnected) {
+          setShowImportSummary(true);
+          url.searchParams.delete('justConnected');
+          window.history.replaceState({}, '', url.toString());
+        }
 
         if (authorized && availableCalendars.length === 0) {
           await fetchCalendars();
@@ -113,8 +128,24 @@ export function ConnectGoogleButton() {
 
 
   const authorizeGoogle = async () => {
-    const redirectUrl = window.location.href;
-    window.location.href = `${API_BASE_URL}/google/authorize?redirect=${redirectUrl}`;
+  // Add ?justConnected=true to the redirect URL so backend can append it after OAuth
+  const redirectUrl = window.location.origin + window.location.pathname + '?justConnected=true';
+  window.location.href = `${API_BASE_URL}/google/authorize?redirect=${encodeURIComponent(redirectUrl)}`;
+  }
+
+  const handleUnauthorizeGoogle = async () => {
+    try {
+      await unauthorizeGoogle();
+      // Reset all state after unauthorizing
+      setIsConnected(false);
+      setAvailableCalendars([]);
+      setSelectedCalendarIds([]);
+      setGcalEvents([]);
+      setCMUCalIds([]);
+    } catch (error) {
+      console.error("Error unauthorizing Google Calendar:", error);
+      // You might want to show a toast or error message to the user
+    }
   }
 
   const fetchCalendars = async () => {
@@ -159,6 +190,28 @@ export function ConnectGoogleButton() {
   
 
   return (
+    <>
+  <Modal show={showImportSummary} onClose={() => setShowImportSummary(false)}>
+        <h2 className="text-lg font-semibold mb-2">Here's what you're importing</h2>
+        <div className="mb-4">
+          <h3 className="font-medium">Imported Calendars:</h3>
+          <ul className="list-disc ml-6">
+            {availableCalendars.map((cal) => (
+              <li key={cal.id} className="mb-1">
+                <span className="font-semibold">{cal.summary}</span>
+                {cal.primary && <span className="ml-2 text-xs text-blue-600">(Primary)</span>}
+                {cal.accessRole === "owner" && <span className="ml-2 text-xs text-green-600">(Owner)</span>}
+              </li>
+            ))}
+          </ul>
+        </div>
+        <button
+          className="mt-6 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          onClick={() => setShowImportSummary(false)}
+        >
+          Continue
+        </button>
+      </Modal>
   <div>
   <FormControl sx={{ m: 1, minWidth: 120 }} size="small">
     <Select
@@ -213,7 +266,15 @@ export function ConnectGoogleButton() {
 
     </Select>
   </FormControl>
+      {isConnected && !loading && (
+      <button
+        onClick={handleUnauthorizeGoogle}
+        title="Disconnect Google Calendar"
+      >
+        Disconnect
+      </button>
+    )}
 </div>
-
+</>
   );
 }
