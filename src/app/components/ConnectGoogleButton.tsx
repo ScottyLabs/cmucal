@@ -14,6 +14,10 @@ import Select, { SelectChangeEvent } from '@mui/material/Select';
 import Checkbox from '@mui/material/Checkbox';
 import { useGcalEvents } from "../../context/GCalEventsContext";
 import { formatGCalEvent } from "../utils/calendarUtils";
+import { CalendarFields } from "../utils/types";
+import { checkGoogleAuthStatus, fetchBulkEventsFromCalendars } from "../utils/api/googleCalendar";
+import { API_BASE_URL } from "../utils/api/api";
+
 
 const ITEM_HEIGHT = 48;
 const ITEM_PADDING_TOP = 8;
@@ -26,8 +30,6 @@ const MenuProps = {
   },
 };
 
-
-
 export function ConnectGoogleButton() {
   // https://mui.com/material-ui/react-select/
   const [isConnected, setIsConnected] = useState(false);
@@ -36,26 +38,21 @@ export function ConnectGoogleButton() {
   const [availableCalendars, setAvailableCalendars] = useState<any[]>([]); // full objects with id & summary
   const [selectedCalendarIds, setSelectedCalendarIds] = useState<string[]>([]); // selected calendar IDs from dropdown
   const { gcalEvents, setGcalEvents } = useGcalEvents();
-  
-  // const { user, isSignedIn, isLoaded: userLoaded } = useUser();
-
-  // const [message, setMessage] = useState("");
-  // "http://localhost:5001/api/google/authorize"
+  const [cmuCalIds, setCMUCalIds] = useState<string[]>([]);
 
   useEffect(() => {
     // Only runs on mount
     const checkAuthStatus = async () => {
       try {
-        const res = await fetch("http://localhost:5001/api/google/calendar/status", {
-          credentials: "include",
-        });
+        // const res = await fetch("http://localhost:5001/api/google/calendar/status", {
+        //   credentials: "include",
+        // });
+        const { authorized } = await checkGoogleAuthStatus();
 
-        if (res.ok) {
-          const data = await res.json();
-          setIsConnected(true);
-          if (availableCalendars.length === 0) {
-            fetchCalendars();
-          }
+        setIsConnected(authorized);
+
+        if (authorized && availableCalendars.length === 0) {
+          await fetchCalendars();
         }
         
       } catch (err) {
@@ -85,14 +82,16 @@ export function ConnectGoogleButton() {
   }, [selectedCalendarIds]);
 
   const fetchEventsFromCalendars = async (calendarIds: string[]) => {
-    const res = await fetch("http://localhost:5001/api/google/calendar/events/bulk", {
-      method: "POST",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ calendarIds }),
-    });
-    const data = await res.json();
-    const formattedGCalEvents = data.map((event: any) => (formatGCalEvent(event)));
+    // const res = await fetch("http://localhost:5001/api/google/calendar/events/bulk", {
+    //   method: "POST",
+    //   credentials: "include",
+    //   headers: { "Content-Type": "application/json" },
+    //   body: JSON.stringify({ calendarIds }),
+    // });
+    const data = await fetchBulkEventsFromCalendars(calendarIds);
+
+    const formattedGCalEvents = data.map((event: any) => (formatGCalEvent(event, cmuCalIds)));
+
     setGcalEvents(formattedGCalEvents);
     // console.log("Fetched events:", data);
   };
@@ -115,39 +114,47 @@ export function ConnectGoogleButton() {
 
   const authorizeGoogle = async () => {
     const redirectUrl = window.location.href;
-    window.location.href = `http://localhost:5001/api/google/authorize?redirect=${redirectUrl}`;
+    window.location.href = `${API_BASE_URL}/google/authorize?redirect=${redirectUrl}`;
   }
 
   const fetchCalendars = async () => {
-    const res = await fetch("http://localhost:5001/api/google/calendars", {
+    // need to change this to using the api client later
+    const res = await fetch(`${API_BASE_URL}/google/calendars`, {
       credentials: "include",
     });
   
     if (res.status === 401) {
       // should add a screen to give them more information and ask if 
       // the user wants to connect their Google account
-      window.location.href = "http://localhost:5001/api/google/authorize";
+      window.location.href = `${API_BASE_URL}/google/authorize`;
       return;
     }
   
-    const data = await res.json();
+    const data : CalendarFields[] = await res.json();
   
     // Sort order:
-    // 1. primary calendar
-    // 2. owned calendars (not primary)
-    // 3. shared calendars
-    const sorted = data.sort((a: any, b: any) => {
-      const priority = (cal: any) => {
-        if (cal.primary) return 0;
-        if (cal.accessRole === "owner") return 1;
-        return 2;
+    // 1. CMUCal (events added from our website)
+    // 2. primary calendar
+    // 3. owned calendars (not primary)
+    // 4. shared calendars
+    const sorted = data.sort((a: CalendarFields, b: CalendarFields) => {
+      const priority = (cal: CalendarFields) => {
+        if (cal.summary === "CMUCal") return 0;
+        if (cal.primary) return 1;
+        if (cal.accessRole === "owner") return 2;
+        return 3;
       };
       return priority(a) - priority(b);
     });
-  
+
     // Save the sorted calendars (or just summary list if you prefer)
     // setAvailableCalendars(sorted.map((cal: any) => cal.summary));
     setAvailableCalendars(sorted);
+    const defaultSelectedIds = data
+          .filter(cal => cal.summary === "CMUCal")
+          .map(cal => cal.id);
+    setSelectedCalendarIds(defaultSelectedIds);
+    setCMUCalIds(defaultSelectedIds);
   };
   
 

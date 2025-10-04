@@ -161,6 +161,14 @@ export interface Category {
     name: string;
 }
 
+export interface CategoryOrg {
+  id: number;
+  name: string;
+  org_id: string;
+  organization_name: string;
+  created_at: Date | null;
+}
+
 export interface Organization {
     org_id: number;
     name: string;
@@ -184,4 +192,84 @@ export interface CourseOption {
   number: string;
   title: string;
   label: string;
+};
+
+export interface CalendarFields {
+  id: string;
+  summary: string;
+  description: string | null;
+  location: string | null;
+  timeZone: string;
+  primary?: boolean;
+  kind?: string;
+  etag?: string;
+  colorId?: string;
+  backgroundColor?: string;
+  foregroundColor?: string;
+  selected?: boolean;
+  accessRole?: string;
+  defaultReminders?: { method: string; minutes: number }[];
+  conferenceProperties?: any;
+}
+
+export interface GCalEvent {
+    id?: string;
+    title?: string;
+    start: string;
+    end: string;
+    location?: string;
+    description?: string;
+    source_url?: string;
+    allDay?: boolean;
+    calendarId: string;
+};
+  
+export interface FullCalendarEvent {
+    id: string;
+    title: string;
+    start: string | Date;
+    end: string | Date;
+    allDay?: boolean;
+    classNames?: string[];
+    extendedProps: {
+      calendarId: string,
+      location?: string,
+      description?: string,
+      source_url?: string,
+      event_id?: string
+    }
+};
+
+export type AuthStatus = { authorized: boolean };
+
+export interface ClubOrganization {
+  id: number;
+  name: string;
+  description: string;
+}
+
+// Generic type for your jsonify response
+export type CoursesClubsResponse = {
+  courses: Course[];
+  clubs: Club[];
+};
+
+export interface TagType {
+  id: number;
+  name: string;
+}
+
+export type ReadIcalLinkResponse = { message: string; calendar_source_id: number };
+
+
+
+export type LoginPayload = {
+  clerk_id: string;
+  email?: string;
+  fname?: string | null;
+  lname?: string | null;
+};
+
+export type LoginResponse = {
+  user: { id: number | string };
 };

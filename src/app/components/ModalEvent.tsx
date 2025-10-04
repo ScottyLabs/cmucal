@@ -12,6 +12,8 @@ import { userAgent } from 'next/server';
 import { useEventState } from "../../context/EventStateContext";
 import { RecurrenceInput } from '../utils/types';
 import dayjs from 'dayjs';
+import { fetchTagsForEvent } from "../utils/api/events";
+import { API_BASE_URL } from '../utils/api/api';
 
 type ModalEventProps = {
     show: boolean;
@@ -20,7 +22,8 @@ type ModalEventProps = {
     // eventId?: number|null;
     savedEventDetails?: EventType;
     event_id?: number;
-    googleFields?: EventType;
+    
+    Fields?: EventType;
 }
 type Tag = { id?: string; name: string };
 
@@ -155,11 +158,6 @@ export default function ModalEvent({ show, onClose, event_id, googleFields }: Mo
         fetchTagAndRecurrence();
         console.log("[edit] fetched tags and recurrence", show, selectedTags, recurrenceRule)  }    
     }, [eventDetails])
-
-
-
-
-
     
     // console.log("show edit modal!!", show, eventDetails)
 

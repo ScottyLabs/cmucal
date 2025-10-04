@@ -7,6 +7,8 @@ import { ReactNode, useState, useEffect } from "react";
 
 import axios from 'axios';
 import { useUser } from "@clerk/nextjs";
+import { getAdminCategories } from '../utils/api/users';
+import { CategoryOrg } from '../utils/types';
 
 type ModalProps = {
   // showUploadModalOne: boolean;
@@ -18,22 +20,14 @@ type ModalProps = {
   onClose: () => void;
 };
 
-interface Category {
-  id: number;
-  name: string;
-  org_id: string;
-  organization_name: string;
-  created_at: Date | null;
-}
-
 // export default function ModalUploadOne({ showUploadModalOne, setShowUploadModalOne, 
 //                                         showUploadModalTwo, setShowUploadModalTwo, setSelectedCategory, onClose}: ModalProps) {
 export default function ModalUploadOne({ show, onClose }: ModalProps) {
 
-  const [selectedOption, setSelectedOption] = useState<Category | null>(null);
+  const [selectedOption, setSelectedOption] = useState<CategoryOrg | null>(null);
   const { user } = useUser();  // clerk user object
   const [loading, setLoading] = useState<boolean>(true);
-  const [adminCategories, setAdminCategories] = useState<Category[]>([]);
+  const [adminCategories, setAdminCategories] = useState<CategoryOrg[]>([]);
   const { openUploadLink } = useEventState();
 
   if (!user) return null;
@@ -44,14 +38,9 @@ export default function ModalUploadOne({ show, onClose }: ModalProps) {
 
       // console.log("Fetching admin categories for Clerk ID:", user.id);
 
-      try {
-        const response = await axios.get('http://localhost:5001/api/users/get_admin_categories', {
-          params: { clerk_id: user.id },
-          withCredentials: true,
-        });
-        setAdminCategories(response.data);
-      } catch (error) {
-        console.error("Error fetching admin categories:", error);
+      const categories = await getAdminCategories(user.id);
+      if (categories) {
+        setAdminCategories(categories);
       }
     };
 

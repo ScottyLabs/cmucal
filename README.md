@@ -5,9 +5,9 @@
 It is bootstrapped with `create-t3-app`.
 
 ## How to run
-- Frontend: `npm run dev`
+- Frontend: `npm run dev` for now.
+    - Note: we will fix type errors around November. Run `npm run build` to see all the errors.
 - Backend: see the `readme` file in the backend folder.
 
-## How do I deploy this?
-
-Follow deployment guides for [Vercel](https://create.t3.gg/en/deployment/vercel), [Netlify](https://create.t3.gg/en/deployment/netlify) and [Docker](https://create.t3.gg/en/deployment/docker) for more information.
+## Deployment
+- Deployed on Vercel.

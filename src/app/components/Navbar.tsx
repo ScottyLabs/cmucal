@@ -20,6 +20,8 @@ import MenuItem from '@mui/material/MenuItem';
 import FormControl from '@mui/material/FormControl';
 import Select, { SelectChangeEvent } from '@mui/material/Select';
 import axios from 'axios';
+import { getUserID, loginWithClerk } from "../utils/api/users";
+import { API_BASE_URL } from "../utils/api/api";
 
 // import dynamic from 'next/dynamic';
 // // Dynamically import ModalUploadOne
@@ -41,7 +43,7 @@ export default function Navbar({ UserButton }: NavBarProps) {
   // const [showUploadModalTwo, setShowUploadModalTwo] = useState(false);  
   const { openPreUpload } = useEventState();
   const [selectedCategory, setSelectedCategory] = useState(null);
-  const [userId, setUserId] = useState<string>("n/a");
+  const [userId, setUserId] = useState<string | number>("n/a");
   const pathname = usePathname();
 
   const [schedules, setSchedules] = useState<Array<{id: number, name: string}>>([]);
@@ -54,28 +56,17 @@ export default function Navbar({ UserButton }: NavBarProps) {
   const getUserIdFromClerkId = async (clerkId: string) => {
     try {
       // First try to get user ID
-      const res = await axios.get("http://localhost:5001/api/users/get_user_id", {
-        params: { clerk_id: clerkId },
-        withCredentials: true,
-      });
-      return res.data.user_id;
+      const data = await getUserID(clerkId);
+      return data.user_id;
     } catch (err: any) {
       // If user not found, create new user
       if (err.response?.status === 404 && user) {
-        try {
-          const loginRes = await axios.post("http://localhost:5001/api/users/login", {
-            clerk_id: clerkId,
-            email: user.emailAddresses[0]?.emailAddress,
-            fname: user.firstName,
-            lname: user.lastName
-          }, {
-            withCredentials: true,
-          });
-          return loginRes.data.user.id;
-        } catch (loginErr) {
-          console.error("Failed to create user:", loginErr);
-          return null;
-        }
+        return loginWithClerk(
+          user.id, 
+          user.emailAddresses[0]?.emailAddress,
+          user.firstName,
+          user.lastName
+        );
       }
       console.error("Failed to fetch user ID:", err);
       return null;
@@ -104,7 +95,7 @@ export default function Navbar({ UserButton }: NavBarProps) {
       }
 
       // Create schedule
-      const response = await axios.post("http://localhost:5001/api/users/create_schedule", {
+      const response = await axios.post(`${API_BASE_URL}/users/create_schedule`, {
         user_id: id,
         name: newScheduleName.trim()
       }, {
@@ -120,7 +111,7 @@ export default function Navbar({ UserButton }: NavBarProps) {
         setNewScheduleName('');
 
         // Refetch schedules to ensure consistency
-        const refreshResponse = await axios.get("http://localhost:5001/api/users/schedules", {
+        const refreshResponse = await axios.get(`${API_BASE_URL}/users/schedules`, {
           params: { user_id: id },
           withCredentials: true,
         });
@@ -147,7 +138,7 @@ export default function Navbar({ UserButton }: NavBarProps) {
         if (id) {
           setUserId(id);
           // Fetch user's schedules
-          const response = await axios.get("http://localhost:5001/api/users/schedules", {
+          const response = await axios.get(`${API_BASE_URL}/users/schedules`, {
             params: { user_id: id },
             withCredentials: true,
           });

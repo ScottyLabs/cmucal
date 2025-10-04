@@ -6,7 +6,8 @@
   /* .fc-daygrid-event */
   
   /* Full Day Events */
-  .fc-event { /* full-day events, where allDay:true in events */
+  /* full-day events, where allDay:true in events */
+  .fc-event { 
     background-color: #182C4B; 
     color: white;
     padding-left: 4px;
@@ -19,51 +20,11 @@
   .fc-event.cmucal-event { /* full-day cmu-cal events */
     background-color: #719F94;
   }
-  
-  /* Hour Specific Event Blocks */
-  /* .fc-event.fc-timegrid-event { 
-    background-color: transparent;
+
+  /* .fc-event.temp-course-event {
+    background-color: #f87171;
   }
-  
-  .fc-event.fc-timegrid-event.gcal-event { 
-    border: 2px solid #425575;
-  }
-  
-  .fc-event.fc-timegrid-event.cmucal-event { 
-    border: 2px solid #719F94;
-  } */
-  
-  /* Hour Specific Event Block Text */
-  /* .fc-timegrid-event .custom-event-text {
-    color: black;
-  }
-  
-  .fc-timegrid-event.gcal-event .custom-event-text {
-    color: #54698c;
-  }
-  
-  .fc-timegrid-event.cmu-cal-event .custom-event-text {
-    color: #719F94;
-  } */
-  
-  
-  .fc-dayGridMonth.fc-event { /* full-day events in month view */
-  
-  }
-  
-  .fc-timeGridWeek {
-  
-  }
-  
-  /* .fc-GCalBtn-button {
-    background-color: #007bff; 
-    color: white;            
-    border: none;             
-    border-radius: 4px;      
-    padding: 5px 10px;    
-    cursor: pointer;    
-  }
-  
-  .fc-GCalBtn-button:hover {
-    background-color: red !important; 
+
+  .fc-event.temp-club-event {
+    background-color: #4ade80;
   } */

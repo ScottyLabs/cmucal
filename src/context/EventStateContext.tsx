@@ -5,6 +5,7 @@ import { EventType } from "../app/types/EventType";
 import { EventInput } from "@fullcalendar/core";
 import { List } from "lucide-react";
 import { RecurrenceInput } from "~/app/utils/types";
+import { API_BASE_URL } from "~/app/utils/api/api";
 
 export type ModalView = "details" | "update" | "pre_upload" | "upload" | "uploadLink" | null;
 type Tag = { id?: string; name: string };
@@ -42,7 +43,7 @@ export const EventStateProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     async function fetchSaved() {
       try {
         console.log("😮Fetching saved events for user:", user?.id);
-        const response = await axios.get("http://localhost:5001/api/events/user_saved_events", {
+        const response = await axios.get(`${API_BASE_URL}/events/user_saved_events`, {
           params: {
             user_id: user?.id,
           },
@@ -120,7 +121,7 @@ export const EventStateProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       if (!isCurrentlySaved) {
         console.log("adding event to gcallll")
         // Add to Google Calendar via backend
-        await axios.post("http://localhost:5001/api/google/calendar/events/add", {
+        await axios.post(`${API_BASE_URL}/google/calendar/events/add`, {
           user_id: user?.id,
           local_event_id: event_occurrence.id,
           title: event_occurrence.title,

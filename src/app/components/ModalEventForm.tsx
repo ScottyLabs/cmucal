@@ -38,6 +38,8 @@ import CustomRecurrenceModal from "./CustomRecurrenceModal";
 import { set } from "lodash";
 import { start } from "repl";
 import { RecurrenceInput, EventPayloadType, CourseOption } from "../utils/types";
+import { createEvent, fetchAllTags } from "../utils/api/events";
+import { getCourseOrgs } from "../utils/api/organizations";
 import { formatRecurrence, toDBRecurrenceEnds, toRRuleFrequency, getNthDayOfWeekInMonth, isLastWeekdayInMonth } from "../utils/dateService";
 import { el } from "node_modules/@fullcalendar/core/internal-common";
 import Modal from './Modal';
@@ -352,12 +354,7 @@ export default function ModalEventForm({ show, onClose, selectedCategory, eventT
 
           console.log("Submitting payload:", payload);
           
-          const res = await axios.post("http://localhost:5001/api/events/create_event", payload, {
-            headers: {
-              "Content-Type": "application/json"
-            },
-            withCredentials: true
-          });
+          const res = await createEvent(payload);
 
           if (res.status === 201) {
             alert("Event created successfully!");
@@ -377,11 +374,7 @@ export default function ModalEventForm({ show, onClose, selectedCategory, eventT
   useEffect(() => {
     const fetchTags = async () => {
       try {
-        const res = await axios.get("http://localhost:5001/api/events/tags", {
-          withCredentials: true, 
-        });
-
-        const tags = res.data; // e.g. [{ id: "1", name: "computer science" }, ...]
+        const tags = await fetchAllTags(); // e.g. [{ id: "1", name: "computer science" }, ...]
         setPredefinedTags(
           tags.map((tag: any) => ({
             id: tag.id,
@@ -395,23 +388,16 @@ export default function ModalEventForm({ show, onClose, selectedCategory, eventT
 
     const fetchCourses = async () => {
       try {
-        const res = await axios.get("http://localhost:5001/api/organizations/get_course_orgs", {
-          withCredentials: true
-        });
+        const data: CourseOption[] = await getCourseOrgs();
 
-        if (res.status === 200) {
-          const data: CourseOption[] = res.data;
+        // Sort by course number, which is a string in the format "15-112"
+        data.sort((a, b) => { return a.number.localeCompare(b.number);}) // Sorts in ascending order
 
-          // Sort by course number, which is a string in the format "15-112"
-          data.sort((a, b) => { return a.number.localeCompare(b.number);}) // Sorts in ascending order
-
-          setCourses(data);
-        }
+        setCourses(data);
       } catch (err) {
         console.error("Failed to fetch courses:", err);
       }
     };
-    
 
     fetchTags();
 

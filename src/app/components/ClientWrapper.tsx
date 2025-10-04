@@ -10,7 +10,7 @@ import { EventStateProvider } from "~/context/EventStateContext";
 import ModalRender from "@components/ModalRender";
 import { useUser } from "@clerk/nextjs";
 import { useEffect, useState } from "react";
-import { sendUserToBackend } from "~/utils/authService"; // adjust path as needed
+import { sendUserToBackend } from "~/app/utils/authService";
 
 
 export default function ClientWrapper({ children }: { children: React.ReactNode }) {

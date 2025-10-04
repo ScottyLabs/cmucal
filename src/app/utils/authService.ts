@@ -1,8 +1,8 @@
 import { useAuth } from "@clerk/nextjs";
-
+import { API_BASE_URL } from "./api/api";
 
 export const sendUserToBackend = async (user: { id: string; email: string; firstName: string; lastName: string }) => {
-  const res = await fetch("http://localhost:5001/api/users/login", {
+  const res = await fetch(`${API_BASE_URL}/users/login`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

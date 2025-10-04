@@ -5,7 +5,7 @@ import TwoColumnLayout from "@components/TwoColumnLayout";
 import { EventInput } from "@fullcalendar/core";
 import ProfileSidebar from "../components/ProfileSidebar";
 import { Course, Club } from "../utils/types";
-import { getSchedule, removeCategoryFromSchedule } from "../../utils/api/schedule";
+import { getSchedule, removeCategoryFromSchedule } from "../utils/api/schedules";
 import Calendar from "../components/Calendar";
 import { useEventState } from "~/context/EventStateContext";
 
@@ -82,9 +82,10 @@ export default function Profile() {
             allDay: event.is_all_day,
             backgroundColor: "#f87171", // Red color for courses
             borderColor: "#f87171",
-            extendedProps: { location: event.location, description: event.description, source_url: event.source_url, 
-              event_id: event.event_id || event.id, // event_id for occurrences, id for non-recurring
-             }
+            classNames: ["temp-course-event"],
+            extendedProps: { location: event.location, description: event.description, source_url: event.source_url,
+                           event_id: event.event_id || event.id, // event_id for occurrences, id for non-recurring}
+            }
           });
         }
       });
@@ -101,9 +102,10 @@ export default function Profile() {
             allDay: event.is_all_day,
             backgroundColor: "#4ade80", // Green color for clubs
             borderColor: "#4ade80",
+            classNames: ["temp-club-event"],
             extendedProps: { location: event.location, description: event.description, source_url: event.source_url,
-              event_id: event.event_id || event.id, // event_id for occurrences, id for non-recurring
-             }
+                           event_id: event.event_id || event.id, // event_id for occurrences, id for non-recurring}
+            }
           });
         }
       });

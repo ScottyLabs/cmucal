@@ -12,14 +12,6 @@ import { SignInButton } from "@clerk/nextjs";
 axios.defaults.withCredentials = true;
 
 const Login: React.FC = () => {
-  // const handleLogin = async () => {
-  //   try {
-  //     const response = await axios.get("http://localhost:8000/login", { withCredentials: true });
-  //     window.location.href = response.data.auth_url; // Redirect to Google login
-  //   } catch (error) {
-  //     console.error("Login failed", error);
-  //   }
-  // };
 
   return (
     <SignInButton >

@@ -13,6 +13,7 @@ import { useUser } from "@clerk/nextjs";
 import { useEventState } from "../../context/EventStateContext";
 import Modal from './Modal';
 import { GCalLinkPayloadType } from "../utils/types";
+import { readIcalLink } from "../utils/api/events";
 
 
 interface ModalProps {
@@ -103,15 +104,11 @@ export default function ModalEventLink({ show, onClose, selectedCategory }: Moda
 
         console.log("Submitting payload:", payload);
           
-        const res = await axios.post("http://localhost:5001/api/events/read_gcal_link", payload, {
-          headers: {
-            "Content-Type": "application/json"
-          },
-          withCredentials: true
-        });
+        const res = await readIcalLink(payload);
 
         // for future improvement, will add a page for users to view their uploaded events
         // and then redirect to that page after successful upload
+        console.log("Response from readIcalLink:", res);
         if (res.status === 201) {
           alert("Events created successfully!");
           onClose(); // ✅ only close modal if backend call succeeds

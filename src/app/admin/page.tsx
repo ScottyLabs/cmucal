@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import useRoleRedirect from "../../utils/redirect";
+import useRoleRedirect from "../utils/redirect";
 
 export default function AdminPage() {
   const [userRole, setUserRole] = useState<string | null>(null);
