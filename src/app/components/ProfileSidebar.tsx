@@ -222,7 +222,7 @@ const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
               {isCoursesEditMode ? (
                 <div className="space-y-3">
                   {loadingCourses ? (
-                    <div className="text-gray-500">Loading courses...</div>
+                    <div className="text-gray-500 text-sm">Loading courses...</div>
                   ) : (
                     <>
                       {/* Existing courses with Remove buttons */}
@@ -354,7 +354,7 @@ const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
               {isClubsEditMode ? (
                 <div className="space-y-3">
                   {loadingClubs ? (
-                    <div className="text-gray-500">Loading clubs...</div>
+                    <div className="text-gray-500 text-sm">Loading clubs...</div>
                   ) : (
                     <>
                       {/* Existing clubs with Remove buttons */}
