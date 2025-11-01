@@ -19,6 +19,12 @@ export default function ClientWrapper({ children }: { children: React.ReactNode 
   const [hasSynced, setHasSynced] = useState(false);
 
   useEffect(() => {
+    if (window.location.hash.includes("__clerk_db_jwt")) {
+      history.replaceState(null, "", window.location.pathname + window.location.search);
+    }
+  }, []);
+
+  useEffect(() => {
     if (isLoaded && isSignedIn && user && !hasSynced) {
       setTimeout(() => {
         sendUserToBackend({
