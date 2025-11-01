@@ -20,7 +20,7 @@ import MenuItem from '@mui/material/MenuItem';
 import FormControl from '@mui/material/FormControl';
 import Select, { SelectChangeEvent } from '@mui/material/Select';
 import axios from 'axios';
-import { getUserID, loginWithClerk } from "../utils/api/users";
+import { getUserID } from "../utils/api/users";
 import { API_BASE_URL } from "../utils/api/api";
 
 // import dynamic from 'next/dynamic';
@@ -60,16 +60,7 @@ export default function Navbar({ UserButton }: NavBarProps) {
       return data.user_id;
     } catch (err: any) {
       // If user not found, create new user
-      if (err.response?.status === 404 && user) {
-        return loginWithClerk(
-          user.id, 
-          user.emailAddresses[0]?.emailAddress,
-          user.firstName,
-          user.lastName
-        );
-      }
-      console.error("Failed to fetch user ID:", err);
-      return null;
+      throw new Error("User not found");
     }
   };
 
