@@ -20,13 +20,15 @@ export default function ClientWrapper({ children }: { children: React.ReactNode 
 
   useEffect(() => {
     if (isLoaded && isSignedIn && user && !hasSynced) {
-      sendUserToBackend({
-        id: user.id,
-        email: user.primaryEmailAddress?.emailAddress || "",
-        firstName: user.firstName || "",
-        lastName: user.lastName || "",
-      });
-      setHasSynced(true);
+      setTimeout(() => {
+        sendUserToBackend({
+          id: user.id,
+          email: user.primaryEmailAddress?.emailAddress || "",
+          firstName: user.firstName || "",
+          lastName: user.lastName || "",
+        });
+        setHasSynced(true);
+      }, 200); // 200–300ms is usually enough to let Clerk remove the #__clerk_db_jwt hash before re-navigation
     }
   }, [isLoaded, isSignedIn, user, hasSynced]);
 
