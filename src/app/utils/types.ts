@@ -98,10 +98,10 @@ export interface EventPayloadType {
 }
 
 export interface RecurrenceInput {
-  frequency: "DAILY" | "WEEKLY" | "MONTHLY" | "YEARLY";
+  frequency: RRuleFrequency;
   interval: number;
   selectedDays: number[];     // For weekly recurrence: [0 (Sun) - 6 (Sat)]
-  ends: "never" | "on" | "after";
+  ends: DBRecurrenceEnds;
   endDate: Dayjs | null;
   occurrences: number;
   startDatetime: Dayjs;
@@ -137,7 +137,23 @@ export interface RecurrenceOutput {
   summary: string;
 }
 
-export type RRuleFrequency = "DAILY" | "WEEKLY" | "MONTHLY" | "YEARLY";
+export enum RRuleFrequency {
+  DAILY = "DAILY",
+  WEEKLY = "WEEKLY",
+  MONTHLY = "MONTHLY",
+  YEARLY = "YEARLY"
+}
+
+export type RepeatType =
+  | "none"
+  | "daily"
+  | "weekly"
+  | "monthly"
+  | "monthly_nth"
+  | "monthly_last"
+  | "yearly"
+  | "weekdays"
+  | "custom";
 
 export type DBRecurrenceEnds = "never" | "on" | "after";
 

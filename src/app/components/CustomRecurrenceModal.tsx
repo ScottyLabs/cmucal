@@ -18,6 +18,7 @@ import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs, { Dayjs } from "dayjs";
 import { useState } from "react";
+import { DBRecurrenceEnds, RRuleFrequency } from "../utils/types";
 
 const weekdays = ["S", "M", "T", "W", "T", "F", "S"];
 
@@ -28,14 +29,14 @@ interface CustomRecurrenceModalProps {
   interval: number;
   setInterval: (val: number) => void;
 
-  frequency: string;
-  setFrequency: (val: string) => void;
+  setFrequency: React.Dispatch<React.SetStateAction<RRuleFrequency>>;
+  frequency: RRuleFrequency;
 
   selectedDays: number[];
   toggleDay: (index: number) => void;
 
-  ends: string;
-  setEnds: (val: string) => void;
+  ends: DBRecurrenceEnds;
+  setEnds: React.Dispatch<React.SetStateAction<DBRecurrenceEnds>>;
 
   endDate: Dayjs | null;
   setEndDate: (val: Dayjs | null) => void;
@@ -81,7 +82,7 @@ export default function CustomRecurrenceModal({ open, onClose, interval, setInte
           </Select>
         </Box>
 
-        {frequency === "WEEKLY" && (
+        {frequency === RRuleFrequency.WEEKLY && (
           <Box
             display="flex"
             justifyContent="center"
@@ -120,7 +121,7 @@ export default function CustomRecurrenceModal({ open, onClose, interval, setInte
         <FormLabel component="legend">Ends</FormLabel>
         <RadioGroup
           value={ends}
-          onChange={(e) => setEnds(e.target.value)}
+          onChange={(e) => setEnds(e.target.value as DBRecurrenceEnds)}
         >
           <FormControlLabel value="never" control={<Radio />} label="Never" />
           <FormControlLabel value="on" control={<Radio />} label="On (inclusive end date)" />

@@ -169,7 +169,7 @@ export function formatRecurrence(input: RecurrenceInput): RecurrenceOutput {
 
 export function dbRecurrenceToForm(dbRecurrence: DbRecurrence): RecurrenceInput {
   // Determine the "ends" type
-  let ends: "never" | "on" | "after" = "never";
+  let ends: DBRecurrenceEnds = "never";
   if (dbRecurrence.count !== null) ends = "after";
   else if (dbRecurrence.until) ends = "on";
 
@@ -193,7 +193,7 @@ export function dbRecurrenceToForm(dbRecurrence: DbRecurrence): RecurrenceInput 
     : [];
 
   return {
-    frequency: dbRecurrence.frequency as "DAILY" | "WEEKLY" | "MONTHLY" | "YEARLY",
+    frequency: dbRecurrence.frequency as RRuleFrequency,
     interval: dbRecurrence.interval,
     startDatetime: dayjs(dbRecurrence.start_datetime),
     endDate: dbRecurrence.until ? dayjs(dbRecurrence.until) : null,
@@ -219,10 +219,10 @@ function ordinal(n: number): string {
 
 export function toRRuleFrequency(input: string): RRuleFrequency {
   const map: Record<string, RRuleFrequency> = {
-    daily: "DAILY",
-    weekly: "WEEKLY",
-    monthly: "MONTHLY",
-    yearly: "YEARLY"
+    daily: RRuleFrequency.DAILY,
+    weekly: RRuleFrequency.WEEKLY,
+    monthly: RRuleFrequency.MONTHLY,
+    yearly: RRuleFrequency.YEARLY
   };
 
   const key = input.toLowerCase();

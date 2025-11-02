@@ -68,7 +68,7 @@ const Calendar: FC<Props> = ({ events }) => {
     };
     // setEventId(info.event.extendedProps.event_id)
     // openDetails(Number(info.event.id));
-    openDetails(info.event.extendedProps.event_id, undefined, undefined, eventInfo);
+    openDetails({event_occurrence_id: info.event.extendedProps.event_id, event_id: info.event.extendedProps.event_id, savedEventDetails: eventInfo});
     console.log("modal:", modalView)
   };
 

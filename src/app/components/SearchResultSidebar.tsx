@@ -174,7 +174,7 @@ export default function SearchResultsSidebar({ events, setEvents }: Props) {
               {savedEventIds.has(event_occurrence.id) ? "Remove" : "Add"}
             </button>
             <button
-              onClick={() => {openDetails(event_occurrence.id, event_occurrence.event_id); console.log("🎅HOHOHO🎅", event_occurrence.id, event_occurrence.event_id)}}
+              onClick={() => {openDetails({ event_occurrence_id: event_occurrence.id, event_id: event_occurrence.event_id }); console.log("🎅HOHOHO🎅", event_occurrence.id, event_occurrence.event_id)}}
               className="mt-2 mx-2 px-3 py-1.5 rounded-lg bg-gray-200">
               Learn more
             </button>

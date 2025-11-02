@@ -6,7 +6,7 @@ import { EventType } from '../types/EventType';
 import { useUser } from '@clerk/nextjs';
 import CustomRecurrenceModal from "./CustomRecurrenceModal"; 
 import { formatRecurrence, toDBRecurrenceEnds, toRRuleFrequency, getNthDayOfWeekInMonth, isLastWeekdayInMonth } from "../utils/dateService";
-import { RecurrenceInput, EventPayloadType, CourseOption } from "../utils/types";
+import { RecurrenceInput, EventPayloadType, CourseOption, RepeatType, RRuleFrequency } from "../utils/types";
 
 
 import { TextField, Autocomplete, Chip, FormControl, InputLabel, Select, MenuItem, Box, Typography, FormControlLabel, Checkbox } from '@mui/material';
@@ -30,7 +30,7 @@ type ModalEventProps = {
     oldEventInfo: EventType;
     savedEventTags: Tag[];
     oldRecurrenceRule: RecurrenceInput;
-    oldRepeat: "none" | "daily" | "weekly" | "monthly" | "yearly" | "custom";
+    oldRepeat: RepeatType;
 }
 
 
@@ -70,7 +70,7 @@ export default function ModalEventUpdate({ show, onClose, oldEventInfo, savedEve
     ];
 
     const [interval, setInterval] = useState(oldRecurrenceRule?.interval ?? 1); // every X unit-of-time
-    const [frequency, setFrequency] = useState(oldRecurrenceRule?.frequency ?? "WEEKLY"); // default to weekly
+    const [frequency, setFrequency] = useState(oldRecurrenceRule?.frequency ?? RRuleFrequency.WEEKLY); // default to weekly
     const [selectedDays, setSelectedDays] = useState<number[]>(oldRecurrenceRule?.selectedDays ?? [1, 2, 3, 4, 5]); // default to M-F
     const [nthWeek, setNthWeek] = useState<number | null>(oldRecurrenceRule?.nthWeek ?? null); // if monthly 
     const [ends, setEnds] = useState(oldRecurrenceRule?.ends ?? "never");
@@ -279,29 +279,29 @@ export default function ModalEventUpdate({ show, onClose, oldEventInfo, savedEve
             // Use computed local values for predefined repeat patterns
             if (!date) throw new Error("Date is not defined");
 
-            let localFrequency: RecurrenceInput["frequency"] = "DAILY";
+            let localFrequency: RecurrenceInput["frequency"] = RRuleFrequency.DAILY;
             let localSelectedDays: number[] = [];
             let localNthWeek: number | null = null;
             let localInterval = 1;
 
             if (repeat === "daily") {
-              localFrequency = "DAILY";
+              localFrequency = RRuleFrequency.DAILY;
               localSelectedDays = [0, 1, 2, 3, 4, 5, 6];
             } else if (repeat === "weekly") {
-              localFrequency = "WEEKLY";
+              localFrequency = RRuleFrequency.WEEKLY;
               localSelectedDays = [date.day()];
             } else if (repeat === "monthly_nth") {
-              localFrequency = "MONTHLY";
+              localFrequency = RRuleFrequency.MONTHLY;
               localSelectedDays = [date.day()];
               localNthWeek = getNthDayOfWeekInMonth(date);
             } else if (repeat === "monthly_last") {
-              localFrequency = "MONTHLY";
+              localFrequency = RRuleFrequency.MONTHLY;
               localSelectedDays = [date.day()];
               localNthWeek = -1;
             } else if (repeat === "yearly") {
-              localFrequency = "YEARLY";
+              localFrequency = RRuleFrequency.YEARLY;
             } else if (repeat === "weekdays") {
-              localFrequency = "WEEKLY";
+              localFrequency = RRuleFrequency.WEEKLY;
               localSelectedDays = [1, 2, 3, 4, 5];
             }
 
@@ -398,7 +398,10 @@ export default function ModalEventUpdate({ show, onClose, oldEventInfo, savedEve
         } catch (err) {
             console.error("Error updating event: ", oldEventInfo.id, err);
         }
-        openDetails(oldEventInfo.id, updatedEventData.updated_event)
+        openDetails({
+          event_occurrence_id: oldEventInfo.id,
+          savedEventDetails: updatedEventData.updated_event,
+        });
         return;
     }
 
@@ -732,7 +735,7 @@ export default function ModalEventUpdate({ show, onClose, oldEventInfo, savedEve
             <div className="flex justify-end gap-4">
                 <button
                 className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600"
-                onClick={() => openDetails(oldEventInfo.id, oldEventInfo)}
+                onClick={() => openDetails({event_occurrence_id: oldEventInfo.id, event_id: oldEventInfo.id, savedEventDetails: oldEventInfo})}
                 >
                 Return to details
                 </button>

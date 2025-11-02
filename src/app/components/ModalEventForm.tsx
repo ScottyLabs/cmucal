@@ -37,7 +37,7 @@ import { useUser } from "@clerk/nextjs";
 import CustomRecurrenceModal from "./CustomRecurrenceModal"; 
 import { set } from "lodash";
 import { start } from "repl";
-import { RecurrenceInput, EventPayloadType, CourseOption } from "../utils/types";
+import { RecurrenceInput, EventPayloadType, CourseOption, RRuleFrequency, DBRecurrenceEnds } from "../utils/types";
 import { createEvent, fetchAllTags } from "../utils/api/events";
 import { getCourseOrgs } from "../utils/api/organizations";
 import { formatRecurrence, toDBRecurrenceEnds, toRRuleFrequency, getNthDayOfWeekInMonth, isLastWeekdayInMonth } from "../utils/dateService";
@@ -100,10 +100,10 @@ export default function ModalEventForm({ show, onClose, selectedCategory, eventT
   ];
 
   const [interval, setInterval] = useState(1);
-  const [frequency, setFrequency] = useState("WEEKLY"); // default to weekly
+  const [frequency, setFrequency] = useState<RRuleFrequency>(RRuleFrequency.WEEKLY); // default to weekly
   const [selectedDays, setSelectedDays] = useState<number[]>([1, 2, 3, 4, 5]); // M-F
   const [nthWeek, setNthWeek] = useState<number | null>(null);
-  const [ends, setEnds] = useState("never");
+  const [ends, setEnds] = useState<DBRecurrenceEnds>("never");
   const [endDate, setEndDate] = useState<Dayjs | null>(null);
   const [occurrences, setOccurrences] = useState<number>(13);
 
@@ -185,7 +185,7 @@ export default function ModalEventForm({ show, onClose, selectedCategory, eventT
     setAllDay(false);
     setRepeat("none");
     setInterval(1);
-    setFrequency("week");
+    setFrequency(RRuleFrequency.WEEKLY);
     // the rest of the recurrence settings
     setRequireRegistration(false);
     setHost("");
@@ -300,29 +300,29 @@ export default function ModalEventForm({ show, onClose, selectedCategory, eventT
               // Use computed local values for predefined repeat patterns
               if (!date) throw new Error("Date is not defined");
 
-              let localFrequency: RecurrenceInput["frequency"] = "DAILY";
+              let localFrequency: RecurrenceInput["frequency"] = RRuleFrequency.DAILY;
               let localSelectedDays: number[] = [];
               let localNthWeek: number | null = null;
               let localInterval = 1;
 
               if (repeat === "daily") {
-                localFrequency = "DAILY";
+                localFrequency = RRuleFrequency.DAILY;
                 localSelectedDays = [0, 1, 2, 3, 4, 5, 6];
               } else if (repeat === "weekly") {
-                localFrequency = "WEEKLY";
+                localFrequency = RRuleFrequency.WEEKLY;
                 localSelectedDays = [date.day()];
               } else if (repeat === "monthly_nth") {
-                localFrequency = "MONTHLY";
+                localFrequency = RRuleFrequency.MONTHLY;
                 localSelectedDays = [date.day()];
                 localNthWeek = getNthDayOfWeekInMonth(date);
               } else if (repeat === "monthly_last") {
-                localFrequency = "MONTHLY";
+                localFrequency = RRuleFrequency.MONTHLY;
                 localSelectedDays = [date.day()];
                 localNthWeek = -1;
               } else if (repeat === "yearly") {
-                localFrequency = "YEARLY";
+                localFrequency = RRuleFrequency.YEARLY;
               } else if (repeat === "weekdays") {
-                localFrequency = "WEEKLY";
+                localFrequency = RRuleFrequency.WEEKLY;
                 localSelectedDays = [1, 2, 3, 4, 5];
               }
 
@@ -882,7 +882,7 @@ export default function ModalEventForm({ show, onClose, selectedCategory, eventT
               onClose={onCustomRecurrenceClose}
               interval={interval}
               setInterval={setInterval}
-              frequency={frequency}
+              frequency={frequency as RRuleFrequency}
               setFrequency={setFrequency}
               selectedDays={selectedDays}
               toggleDay={toggleDay}

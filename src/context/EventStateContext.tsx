@@ -10,6 +10,13 @@ import { API_BASE_URL } from "~/app/utils/api/api";
 export type ModalView = "details" | "update" | "pre_upload" | "upload" | "uploadLink" | null;
 type Tag = { id?: string; name: string };
 
+type OpenDetailsArgs = {
+  event_occurrence_id: number;
+  event_id?: number;
+  savedEventDetails?: EventType;
+  googleFields?: EventType;
+};
+
 type EventStateContextType = {
   selectedEvent: number|null;
   setSelectedEvent: (id: number|null) => void;
@@ -168,7 +175,9 @@ export const useEventState = () => {
     throw new Error("useEventState must be used within a EventStateContext.Provider");
   }
 
-  const openDetails = (event_occurrence_id: number, event_id?: number, savedEventDetails?: EventType, googleFields?: EventType) => {
+
+  
+const openDetails = ({ event_occurrence_id, event_id, savedEventDetails, googleFields }: OpenDetailsArgs) => {
     context.setSelectedEvent(event_occurrence_id);
     context.setModalData({
       "savedEventDetails": savedEventDetails, 
