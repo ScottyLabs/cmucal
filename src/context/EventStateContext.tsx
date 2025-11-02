@@ -4,6 +4,7 @@ import { useUser } from "@clerk/nextjs";
 import { EventType } from "../app/types/EventType";
 import { EventInput } from "@fullcalendar/core";
 import { List } from "lucide-react";
+import { RecurrenceInput } from "~/app/utils/types";
 import { API_BASE_URL } from "~/app/utils/api/api";
 
 export type ModalView = "details" | "update" | "pre_upload" | "upload" | "uploadLink" | null;
@@ -58,60 +59,59 @@ export const EventStateProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   }, [user?.id]);
 
 
-  // TODO: define toggleAdded (move it here)
-  const toggleAdded = async (event: EventType) => {
-      // const updatedEvents = [...events];
+  const toggleAdded = async (event_occurrence: EventType) => {
+      // const updatedEvents = [...event_occurrences];
       // const index = updatedEvents.findIndex((e) => e.id === thisId);
-      // const event = updatedEvents[index];
+      // const event_occurrence = updatedEvents[index];
 
-    if (!event) return;
-    const isCurrentlySaved = savedEventIds.has(event.id)
+    if (!event_occurrence) return;
+    const isCurrentlySaved = savedEventIds.has(event_occurrence.id)
 
-    console.log("👀toggling event, ", savedEventIds.has(event.id), event);
+    console.log("👀toggling event_occurrence, ", savedEventIds.has(event_occurrence.id), event_occurrence);
 
     // 1. Toggle locally - update attribute
-    // event.user_saved = !event.user_saved;
+    // event_occurrence.user_saved = !event_occurrence.user_saved;
     // setEvents(updatedEvents);
     if (isCurrentlySaved) {
-      // Remove the event from the saved IDs Set
+      // Remove the event_occurrence from the saved IDs Set
       setSavedEventIds(prevSet => {
         const newSet = new Set(prevSet);
-        newSet.delete(event.id)
+        newSet.delete(event_occurrence.id)
         return newSet
       })
       console.log("(remove) updated saved ids: ", savedEventIds)
     } else {
-      // Add the event to saved Ids Set
-      setSavedEventIds(prevSet => new Set(prevSet).add(event.id))
+      // Add the event_occurrence to saved Ids Set
+      setSavedEventIds(prevSet => new Set(prevSet).add(event_occurrence.id))
       console.log("(add) updated saved ids: ", savedEventIds)
     }
     
-    console.log("❓❓❓id in saved set? ", savedEventIds.has(event.id))
+    console.log("❓❓❓id in saved set? ", savedEventIds.has(event_occurrence.id))
 
-    // 2. Update the User_saved_events table in database
-    try {
-      if (!isCurrentlySaved) {
-        // Add the event to current user's calendar
-        await axios.post(`${API_BASE_URL}/events/user_saved_events`, {
-          user_id: user?.id,
-          event_id: event.id,
-          google_event_id: event.id, // [Q|TODO] is google event id needed in this table
-        }, {
-          withCredentials: true,
-        }); 
-      } else {
-        // Remove the event from current user's calendar
-        await axios.delete(`${API_BASE_URL}/events/user_saved_events/${event.id}`, {
-          data: {
-          user_id: user?.id,
-          google_event_id: event.id, // [Q|TODO] is google event id needed in this table
-        },
-          withCredentials: true,
-        });
-      }
-    } catch (err) {
-      console.error("Error saving / unsaving the event to user_saved_events, ", err);
-    }
+    // // 2. Update the User_saved_events table in database
+    // try {
+    //   if (!isCurrentlySaved) {
+    //     // Add the event to current user's calendar
+    //     await axios.post("http://localhost:5001/api/events/user_saved_events", {
+    //       user_id: user?.id,
+    //       event_occurrence_id: event_occurrence.id,
+    //       google_event_id: event_occurrence.id, // [Q|TODO] is google event id needed in this table
+    //     }, {
+    //       withCredentials: true,
+    //     }); 
+    //   } else {
+    //     // Remove the event from current user's calendar
+    //     await axios.delete(`http://localhost:5001/api/events/user_saved_events/${event_occurrence.id}`, {
+    //       data: {
+    //       user_id: user?.id,
+    //       google_event_id: event_occurrence.id, // [Q|TODO] is google event id needed in this table
+    //     },
+    //       withCredentials: true,
+    //     });
+    //   }
+    // } catch (err) {
+    //   console.error("Error saving / unsaving the event to user_saved_events, ", err);
+    // }
 
     // 3. Update calendar view
     // fetchCalendarEvents();
@@ -123,16 +123,16 @@ export const EventStateProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         // Add to Google Calendar via backend
         await axios.post(`${API_BASE_URL}/google/calendar/events/add`, {
           user_id: user?.id,
-          local_event_id: event.id,
-          title: event.title,
-          start: event.start_datetime,
-          end: event.end_datetime,
+          local_event_id: event_occurrence.id,
+          title: event_occurrence.title,
+          start: event_occurrence.start_datetime,
+          end: event_occurrence.end_datetime,
         }, {
           withCredentials: true,
         });        
       } else {
         // Remove from Google Calendar via backend
-        await axios.delete(`${API_BASE_URL}/google/calendar/events/${event.id}`, {
+        await axios.delete(`http://localhost:5001/api/google/calendar/events/${event_occurrence.id}`, {
           data: {
             user_id: user?.id,
           },
@@ -168,15 +168,18 @@ export const useEventState = () => {
     throw new Error("useEventState must be used within a EventStateContext.Provider");
   }
 
-  const openDetails = (event_id: number, savedEventDetails?: EventType) => {
-    context.setSelectedEvent(event_id);
-    context.setModalData({"savedEventDetails": savedEventDetails})
+  const openDetails = (event_occurrence_id: number, event_id?: number, savedEventDetails?: EventType, googleFields?: EventType) => {
+    context.setSelectedEvent(event_occurrence_id);
+    context.setModalData({
+      "savedEventDetails": savedEventDetails, 
+      "event_id": event_id, 
+      "googleFields": googleFields})
     context.setModalView("details");
   };
-  const openUpdate = (eventInfo: EventType, selectedTags: Tag[]) => {
+  const openUpdate = (eventInfo: EventType, selectedTags: Tag[], recurrenceRule: RecurrenceInput, oldRepeat: string) => {
     // context.setSelectedEvent(event_id);// no need since always routed from the details modal
-    
-    context.setModalData({"eventInfo": eventInfo, "selectedTags": selectedTags})
+    context.setModalData({"eventInfo": eventInfo, "selectedTags": selectedTags, 
+      "recurrenceRule": recurrenceRule, "oldRepeat": oldRepeat})
     console.log("opening update.... setting modal data", eventInfo)
     context.setModalView("update");
   };

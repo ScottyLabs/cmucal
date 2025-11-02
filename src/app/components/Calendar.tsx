@@ -51,12 +51,24 @@ const Calendar: FC<Props> = ({ events }) => {
   console.log("Merged Events:", mergedEvents);
 
   const handleEventClick = async (info: EventClickArg) => {
-    console.log(info.event);
-    console.log(info.event.extendedProps);
+    let eventInfo: EventType;
+    console.log("🍵", info.event);
+    console.log(info.event._def.title, info.event._instance?.range.start, info.event._instance?.range.end);
     console.log("clicked event id:", info.event.extendedProps.event_id);
+
+    eventInfo = {
+      title: info.event._def.title,
+      start_datetime: info.event._instance?.range.start.toISOString() ||"", 
+      end_datetime: info.event._instance?.range.end.toISOString() ||"",
+      id: -1, 
+      is_all_day: false, // TODO: these are currently just placeholders, need to edit the google api to fetch more info later
+      location: "random location",
+      org_id: "6004", // cmucal org lol
+      category_id: "22", // cmucal dev
+    };
     // setEventId(info.event.extendedProps.event_id)
-    openDetails(Number(info.event.id));
-    openDetails(info.event.extendedProps.event_id);
+    // openDetails(Number(info.event.id));
+    openDetails(info.event.extendedProps.event_id, undefined, undefined, eventInfo);
     console.log("modal:", modalView)
   };
 

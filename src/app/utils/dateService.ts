@@ -1,6 +1,6 @@
 import React from "react";
 import dayjs, { Dayjs } from "dayjs";
-import { DBRecurrenceEnds, RecurrenceInput, RecurrenceOutput, RRuleFrequency } from "./types"; // Adjust the import path as necessary
+import { DBRecurrenceEnds, RecurrenceInput, RecurrenceOutput, DbRecurrence, RRuleFrequency } from "./types"; // Adjust the import path as necessary
 
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
@@ -164,6 +164,45 @@ export function formatRecurrence(input: RecurrenceInput): RecurrenceOutput {
   };
 
   return { dbRecurrence, summary };
+}
+
+
+export function dbRecurrenceToForm(dbRecurrence: DbRecurrence): RecurrenceInput {
+  // Determine the "ends" type
+  let ends: "never" | "on" | "after" = "never";
+  if (dbRecurrence.count !== null) ends = "after";
+  else if (dbRecurrence.until) ends = "on";
+
+  // Convert by_day strings like ["MO", "3FR"] → selectedDays indices 0-6 (Sun-Sat)
+  const WEEKDAY_MAP: Record<string, number> = {
+    SU: 0,
+    MO: 1,
+    TU: 2,
+    WE: 3,
+    TH: 4,
+    FR: 5,
+    SA: 6,
+  };
+
+  const selectedDays: number[] = dbRecurrence.by_day
+    ? dbRecurrence.by_day.map(dayStr => {
+        // Handle things like "MO" or "3FR" (just take last 2 letters for day)
+        const dayCode = dayStr.slice(-2).toUpperCase();
+        return WEEKDAY_MAP[dayCode];
+      }).filter((d): d is number => d !== undefined)
+    : [];
+
+  return {
+    frequency: dbRecurrence.frequency as "DAILY" | "WEEKLY" | "MONTHLY" | "YEARLY",
+    interval: dbRecurrence.interval,
+    startDatetime: dayjs(dbRecurrence.start_datetime),
+    endDate: dbRecurrence.until ? dayjs(dbRecurrence.until) : null,
+    occurrences: dbRecurrence.count ?? 0,
+    ends,
+    eventId: dbRecurrence.event_id,
+    selectedDays,
+    nthWeek: dbRecurrence.by_month_day ?? null, // optional mapping, depends on your monthly logic
+  };
 }
 
 
