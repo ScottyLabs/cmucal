@@ -11,12 +11,14 @@ import MenuItem from '@mui/material/MenuItem';
 import FormControl from '@mui/material/FormControl';
 import ListItemText from '@mui/material/ListItemText';
 import Select, { SelectChangeEvent } from '@mui/material/Select';
+import Button from '@mui/material/Button';
 import Checkbox from '@mui/material/Checkbox';
 import { useGcalEvents } from "../../context/GCalEventsContext";
 import { formatGCalEvent } from "../utils/calendarUtils";
 import { CalendarFields } from "../utils/types";
-import { checkGoogleAuthStatus, fetchBulkEventsFromCalendars } from "../utils/api/googleCalendar";
+import { checkGoogleAuthStatus, fetchBulkEventsFromCalendars, unauthorizeGoogle } from "../utils/api/googleCalendar";
 import { API_BASE_URL } from "../utils/api/api";
+import Modal from "./Modal";
 
 
 const ITEM_HEIGHT = 48;
@@ -39,29 +41,49 @@ export function ConnectGoogleButton() {
   const [selectedCalendarIds, setSelectedCalendarIds] = useState<string[]>([]); // selected calendar IDs from dropdown
   const { gcalEvents, setGcalEvents } = useGcalEvents();
   const [cmuCalIds, setCMUCalIds] = useState<string[]>([]);
+  const [showImportSummary, setShowImportSummary] = useState(false);
+  const [showWelcomeModal, setShowWelcomeModal] = useState(false);
 
   useEffect(() => {
     // Only runs on mount
+
+    // url params
+    const url = new URL(window.location.href);
+    const justConnected = url.searchParams.get('justConnected');
+    const welcome = url.searchParams.get('welcome');
+
     const checkAuthStatus = async () => {
       try {
-        // const res = await fetch("http://localhost:5001/api/google/calendar/status", {
-        //   credentials: "include",
-        // });
         const { authorized } = await checkGoogleAuthStatus();
-
         setIsConnected(authorized);
+
+        // Show import summary modal if just connected
+        if (justConnected) {
+          if (authorized) {
+            setShowImportSummary(true);
+          }
+          url.searchParams.delete('justConnected');
+          window.history.replaceState({}, '', url.toString());
+        }
+
+        // Show welcome modal if welcome param is present and not connected
+        if (welcome) {
+          if (!authorized) {
+            setShowWelcomeModal(true);
+          }
+          url.searchParams.delete('welcome');
+          window.history.replaceState({}, '', url.toString());
+        }
 
         if (authorized && availableCalendars.length === 0) {
           await fetchCalendars();
         }
-        
       } catch (err) {
         console.error("Error checking Google auth status:", err);
       } finally {
         setLoading(false);
       }
     };
-    // if (!userLoaded || !isSignedIn || !user) return;
     checkAuthStatus();
   }, []);
 
@@ -113,8 +135,24 @@ export function ConnectGoogleButton() {
 
 
   const authorizeGoogle = async () => {
-    const redirectUrl = window.location.href;
-    window.location.href = `${API_BASE_URL}/google/authorize?redirect=${redirectUrl}`;
+  // Add ?justConnected=true to the redirect URL so backend can append it after OAuth
+  const redirectUrl = window.location.origin + window.location.pathname + '?justConnected=true';
+  window.location.href = `${API_BASE_URL}/google/authorize?redirect=${encodeURIComponent(redirectUrl)}`;
+  }
+
+  const handleUnauthorizeGoogle = async () => {
+    try {
+      await unauthorizeGoogle();
+      // Reset all state after unauthorizing
+      setIsConnected(false);
+      setAvailableCalendars([]);
+      setSelectedCalendarIds([]);
+      setGcalEvents([]);
+      setCMUCalIds([]);
+    } catch (error) {
+      console.error("Error unauthorizing Google Calendar:", error);
+      // You might want to show a toast or error message to the user
+    }
   }
 
   const fetchCalendars = async () => {
@@ -159,61 +197,116 @@ export function ConnectGoogleButton() {
   
 
   return (
-  <div>
-  <FormControl sx={{ m: 1, minWidth: 120 }} size="small">
-    <Select
-      id="calendar-select"
-      multiple
-      value={selectedCalendarIds}
-      onOpen={handleSelectOpen}
-      onChange={handleChange}
-      input={<OutlinedInput />}
-      renderValue={(selected) => getGoogleConnectionStatus()}
-      // was selected.join(', ')
-      displayEmpty
-      MenuProps={MenuProps}
-      inputProps={{ 'aria-label': 'Without label' }}
-      sx={{
-        border: "1px solid #f1f1f1",
-        '&:focus': {
-          border: "1px solid #f1f1f1",
-        },
-        '& .MuiSelect-icon': {
-          display: "none", // hide dropdown arrow
-        },
-        '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-          border: "1px solid #f1f1f1",
-        },
-        '&.Mui-focused': {
-          boxShadow: "none", // remove focus ring
-          border: "1px solid #f1f1f1"
-        }
-      }}
-    >
-      {availableCalendars.map((cal) => (
-        <MenuItem
-          key={cal.id}
-          value={cal.id}
-          sx={{
-            fontSize: '0.85rem',
-            display: 'flex',
-            alignItems: 'center',
-          }}
+    <>
+      {/* Welcome Modal for brand new users */}
+      <Modal show={showWelcomeModal} onClose={() => setShowWelcomeModal(false)}>
+        <h2 className="text-lg font-semibold mb-2">Welcome to CMUCal!</h2>
+        <p className="mb-4">Connect your Google Calendar to get started.</p>
+        <div className="flex gap-4 mt-6">
+          <button
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            onClick={() => {
+              setShowWelcomeModal(false);
+              authorizeGoogle();
+            }}
+          >
+            Connect Google Calendar
+          </button>
+          <button
+            className="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300"
+            onClick={() => setShowWelcomeModal(false)}
+          >
+            Do it later
+          </button>
+        </div>
+      </Modal>
+
+      {/* Import Summary Modal for just connected users */}
+      <Modal show={showImportSummary} onClose={() => setShowImportSummary(false)}>
+        <h2 className="text-lg font-semibold mb-2">Here's what you're importing</h2>
+        <div className="mb-4">
+          <h3 className="font-medium">Imported Calendars:</h3>
+          <ul className="list-disc ml-6">
+            {availableCalendars.map((cal) => (
+              <li key={cal.id} className="mb-1">
+                <span className="font-semibold">{cal.summary}</span>
+                {cal.primary && <span className="ml-2 text-xs text-blue-600">(Primary)</span>}
+                {cal.accessRole === "owner" && <span className="ml-2 text-xs text-green-600">(Owner)</span>}
+              </li>
+            ))}
+          </ul>
+        </div>
+        <button
+          className="mt-6 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          onClick={() => setShowImportSummary(false)}
         >
-          <Checkbox checked={selectedCalendarIds.includes(cal.id)} />
-          <ListItemText
-            primary={
-              <div className="overflow-x-scroll whitespace-nowrap text-sm">
-                {cal.summary}
-              </div>
-            }
-          />
-        </MenuItem>
-      ))}
+          Continue
+        </button>
+      </Modal>
 
-    </Select>
-  </FormControl>
-</div>
+      <div>
+        <FormControl sx={{ m: 1, minWidth: 120 }} size="small">
+          <Select
+            id="calendar-select"
+            multiple
+            value={selectedCalendarIds}
+            onOpen={handleSelectOpen}
+            onChange={handleChange}
+            input={<OutlinedInput />}
+            renderValue={(selected) => getGoogleConnectionStatus()}
+            // was selected.join(', ')
+            displayEmpty
+            MenuProps={MenuProps}
+            inputProps={{ 'aria-label': 'Without label' }}
+            sx={{
+              border: "1px solid #f1f1f1",
+              '&:focus': {
+                border: "1px solid #f1f1f1",
+              },
+              '& .MuiSelect-icon': {
+                display: "none", // hide dropdown arrow
+              },
+              '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                border: "1px solid #f1f1f1",
+              },
+              '&.Mui-focused': {
+                boxShadow: "none", // remove focus ring
+                border: "1px solid #f1f1f1"
+              }
+            }}
+          >
+            {availableCalendars.map((cal) => (
+              <MenuItem
+                key={cal.id}
+                value={cal.id}
+                sx={{
+                  fontSize: '0.85rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                }}
+              >
+                <Checkbox checked={selectedCalendarIds.includes(cal.id)} />
+                <ListItemText
+                  primary={
+                    <div className="overflow-x-scroll whitespace-nowrap text-sm">
+                      {cal.summary}
+                    </div>
+                  }
+                />
+              </MenuItem>
+            ))}
 
+          </Select>
+        </FormControl>
+      </div>
+      {isConnected && !loading && (
+            <button
+            onClick={handleUnauthorizeGoogle}
+            className='px-4 py-2 border rounded-md bg-gray-100 dark:bg-gray-600 hover:bg-gray-200 dark:hover:bg-gray-500'
+            >
+            Disconnect Gcal
+            </button>
+        )}
+    </>
   );
 }

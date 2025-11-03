@@ -1,4 +1,4 @@
-import { apiGet, apiPost } from "./api";
+import { apiGet, apiPost, apiDelete } from "./api";
 import { AuthStatus } from "../types";
 
 export const checkGoogleAuthStatus = () =>
@@ -6,6 +6,9 @@ export const checkGoogleAuthStatus = () =>
 
 export const listGoogleCalendars = () =>
   apiGet<any[]>("/google/calendar/list");
+
+export const unauthorizeGoogle = () =>
+  apiDelete("/google/unauthorize");
 
 export const fetchBulkEventsFromCalendars = async (
   calendarIds: string[]
