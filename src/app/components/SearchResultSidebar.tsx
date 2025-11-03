@@ -94,10 +94,8 @@ export default function SearchResultsSidebar({ events, setEvents }: Props) {
     const fetchEvents = async () => {
       try {
         setLoading(true);
-        // const res = await axios.get("http://localhost:5001/api/events", {
-        const res = await axios.get("http://localhost:5001/api/events/occurrences", {
-//         const res = await api.get(`/events/`, {
-          headers: { "Clerk-User-Id": user?.id }, // combined during conflict resolution on github UI
+        const res = await api.get(`/events/`, {
+          headers: { "Clerk-User-Id": user?.id },
           params: {
             term: debouncedSearchTerm,
             tags: selectedTagIds,
@@ -158,23 +156,23 @@ export default function SearchResultsSidebar({ events, setEvents }: Props) {
             No matching events found.
           </li>
         )}
-        {filteredEvents.map((event_occurrence) => (
-          <li key={event_occurrence.id} className="p-3 rounded border">
+        {filteredEvents.map((event) => (
+          <li key={event.id} className="p-3 rounded border">
             <p className="text-sm text-gray-400">EVENT</p>
-            <p className="text-lg">{event_occurrence.title}</p>
-            <p className="text-base text-gray-500">{formatDate(event_occurrence.start_datetime)} - {formatDate(event_occurrence.end_datetime)}</p>
-            <p className="text-base text-gray-500">{event_occurrence.location}</p>
+            <p className="text-lg">{event.title}</p>
+            <p className="text-base text-gray-500">{formatDate(event.start_datetime)} - {formatDate(event.end_datetime)}</p>
+            <p className="text-base text-gray-500">{event.location}</p>
             <button
-              // onClick={() => toggleAdded(event_occurrence.id)}
-              onClick={() => toggleAdded(event_occurrence)}
+              // onClick={() => toggleAdded(event.id)}
+              onClick={() => toggleAdded(event)}
               className={`mt-2 px-3 py-1.5 rounded-lg ${
-                savedEventIds.has(event_occurrence.id) ? "bg-blue-300" : "bg-blue-500"//event_occurrence.user_saved
+                savedEventIds.has(event.id) ? "bg-blue-300" : "bg-blue-500"//event.user_saved
               } text-white`}
             >
-              {savedEventIds.has(event_occurrence.id) ? "Remove" : "Add"}
+              {savedEventIds.has(event.id) ? "Remove" : "Add"}
             </button>
             <button
-              onClick={() => {openDetails(event_occurrence.id, event_occurrence.event_id); console.log("🎅HOHOHO🎅", event_occurrence.id, event_occurrence.event_id)}}
+              onClick={() => openDetails(event.id)}
               className="mt-2 mx-2 px-3 py-1.5 rounded-lg bg-gray-200">
               Learn more
             </button>
