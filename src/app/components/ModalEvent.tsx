@@ -12,7 +12,7 @@ import { userAgent } from 'next/server';
 import { useEventState } from "../../context/EventStateContext";
 import { RecurrenceInput } from '../utils/types';
 import dayjs from 'dayjs';
-import { fetchTagsForEvent } from "../utils/api/events";
+import { fetchTagsForEvent, getEventOccurrence, getTags } from "../utils/api/events";
 import { API_BASE_URL } from '../utils/api/api';
 
 type ModalEventProps = {
@@ -78,12 +78,7 @@ export default function ModalEvent({ show, onClose, event_id, googleFields }: Mo
             const fetchEventDetails = async() => {
                 try {
                     // const eventRes = await axios.get(`http://localhost:5001//api/events/${eventId}`, {
-                    const eventRes = await axios.get(`http://localhost:5001//api/events/occurrence/${event_occurrence_id}`, {
-                        params: {
-                            user_id: user?.id,
-                        },
-                        withCredentials: true,
-                    });
+                    const eventRes = await getEventOccurrence(event_occurrence_id!, user?.id || "");
                     setEventDetails(eventRes.data)
                 
                 } catch (err) {
@@ -104,10 +99,8 @@ export default function ModalEvent({ show, onClose, event_id, googleFields }: Mo
             try {
                 // Fetching tags              
                 // const eventId = eventDetails.event_id;
-                const tagRes = await axios.get(`http://localhost:5001/api/events/${eventId}/tags`, {
-                    withCredentials: true,
-                });
-                const tags = tagRes.data; // e.g. [{ id: "1", name: "computer science" }, ...]
+                const tags = await getTags(eventId!, user?.id || "");
+                // const tags = tagRes.data; // e.g. [{ id: "1", name: "computer science" }, ...]
                 setSelectedTags(
                     tags.map((tag: any) => ({
                         id: tag.id,
