@@ -109,31 +109,18 @@ export interface RecurrenceInput {
   nthWeek?: number | null;    // For monthly recurrence: 1-5 or -1 for last week
 }
 
-export interface DbRecurrence {
-  frequency: string;
-  interval: number;
-  start_datetime: string;
-  count: number | null;
-  until: string | null;
-  by_day: string[] | null;
-  by_month: number | null;
-  by_month_day: number | null;
-  event_id: number;
-}
-
 export interface RecurrenceOutput {
-  // dbRecurrence: {
-  //   frequency: string;
-  //   interval: number;
-  //   count: number | null;
-  //   until: string | null;
-  //   event_id: number;
-  //   by_day: string[] | null;
-  //   by_month: number | null;
-  //   by_month_day: number | null;
-  //   start_datetime: string;
-  // };
-  dbRecurrence: DbRecurrence;
+  dbRecurrence: {
+    frequency: string;
+    interval: number;
+    count: number | null;
+    until: string | null;
+    event_id: number;
+    by_day: string[] | null;
+    by_month: number | null;
+    by_month_day: number | null;
+    start_datetime: string;
+  };
   summary: string;
 }
 

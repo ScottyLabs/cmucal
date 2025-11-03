@@ -37,16 +37,12 @@ export default function ModalRender() {
                 //     Modal is showing!
                 // </div>
                 <ModalEvent show={true} onClose={closeModal}
-                event_id={modalData.event_id}
-                savedEventDetails={modalData.savedEventDetails}
-                googleFields={modalData.googleFields}/>
+                savedEventDetails={modalData.savedEventDetails}/>
             )}
             {modalView==="update" && (
                 <ModalEventUpdate show={true} onClose={closeModal} 
                 oldEventInfo={modalData.eventInfo}
-                savedEventTags={modalData.selectedTags}
-                oldRecurrenceRule={modalData.recurrenceRule}
-                oldRepeat={modalData.oldRepeat}/>
+                savedEventTags={modalData.selectedTags}/>
             )}
             {modalView==="pre_upload" && (
                 <ModalUploadOne show={true} onClose={closeModal} />
