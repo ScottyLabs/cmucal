@@ -17,15 +17,6 @@ export default function Home() {
 
   const { getToken, isLoaded, userId } = useAuth();
 
-  if (!userId) {
-    return (
-      <div className="flex justify-center items-center h-[80vh]">
-        {/* Optional: a signed-out landing page or leave empty */}
-        <p>Welcome! If you have not signed in, please sign in to continue.</p>
-      </div>
-    );
-  }
-
 
   const [courses, setCourses] = useState<Course[]>([]);
   const [clubs, setClubs] = useState<Club[]>([]);
