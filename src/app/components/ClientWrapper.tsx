@@ -1,45 +1,40 @@
-"use client";
-
 import ThemeProvider from "@components/ThemeProvider";
 import Navbar from "@components/Navbar";
 import SignedOutNav from "@components/SignedOutNav";
 import Welcome from "@components/Welcome";
 import { SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
-import { GcalEventsContext } from "../../context/GCalEventsContext";
+import { GcalEventsProvider } from "../../context/GCalEventsContext";
 import { EventStateProvider } from "~/context/EventStateContext";
 import ModalRender from "@components/ModalRender";
-import { useUser } from "@clerk/nextjs";
-import { useEffect, useState } from "react";
-import { sendUserToBackend } from "~/app/utils/authService";
+import { auth, clerkClient } from "@clerk/nextjs/server";
+import { loginWithClerk } from "../utils/api/users";
 
+export default async function ClientWrapper({ children }: { children: React.ReactNode }) {
+  const { userId } = await auth();
+  const client = await clerkClient()
 
-export default function ClientWrapper({ children }: { children: React.ReactNode }) {
-  const [gcalEvents, setGcalEvents] = useState<any[]>([]);
-  const { user, isSignedIn, isLoaded } = useUser();
-  const [hasSynced, setHasSynced] = useState(false);
-
+  if (userId) {
+    const user = await client.users.getUser(userId)
+    try {
+      await loginWithClerk(
+        user.id,
+        user.emailAddresses[0]?.emailAddress,
+        user.firstName,
+        user.lastName
+      );
+    } catch (err) {
+      console.error("Error during Clerk login:", err);
+    }
+  }
+  
   useEffect(() => {
     if (window.location.hash.includes("__clerk_db_jwt")) {
       history.replaceState(null, "", window.location.pathname + window.location.search);
     }
   }, []);
-
-  useEffect(() => {
-    if (isLoaded && isSignedIn && user && !hasSynced) {
-      setTimeout(() => {
-        sendUserToBackend({
-          id: user.id,
-          email: user.primaryEmailAddress?.emailAddress || "",
-          firstName: user.firstName || "",
-          lastName: user.lastName || "",
-        });
-        setHasSynced(true);
-      }, 200); // 200–300ms is usually enough to let Clerk remove the #__clerk_db_jwt hash before re-navigation
-    }
-  }, [isLoaded, isSignedIn, user, hasSynced]);
-
+  
   return (
-    <GcalEventsContext.Provider value={{ gcalEvents, setGcalEvents }}>
+    <GcalEventsProvider>
       <EventStateProvider>
         <ThemeProvider>
           <SignedIn>
@@ -62,6 +57,6 @@ export default function ClientWrapper({ children }: { children: React.ReactNode 
           </main>
         </ThemeProvider>
       </EventStateProvider>
-    </GcalEventsContext.Provider>
+    </GcalEventsProvider>
   );
 }
