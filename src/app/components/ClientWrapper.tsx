@@ -27,6 +27,12 @@ export default async function ClientWrapper({ children }: { children: React.Reac
     }
   }
   
+  useEffect(() => {
+    if (window.location.hash.includes("__clerk_db_jwt")) {
+      history.replaceState(null, "", window.location.pathname + window.location.search);
+    }
+  }, []);
+  
   return (
     <GcalEventsProvider>
       <EventStateProvider>

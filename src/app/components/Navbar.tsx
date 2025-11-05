@@ -163,10 +163,10 @@ export default function Navbar({ UserButton }: NavBarProps) {
         {/* Left Section: User & Search */}
         <div className="flex items-center space-x-2">
           {/* User Icon (Links to Profile Page) */}
-          <Link href="/profile">
+          <Link href="/">
             <div
               className={`flex items-center justify-center w-10 h-10 rounded-md cursor-pointer dark:bg-gray-600
-                ${pathname === "/profile" ? "bg-gray-500 text-white" : "bg-gray-200 text-gray-600 hover:bg-gray-300"}
+                ${pathname === "/" ? "bg-gray-500 text-white" : "bg-gray-200 text-gray-600 hover:bg-gray-300"}
               `}
             >
               <FaRegUser className="text-gray-600 dark:text-white" size={18} />
