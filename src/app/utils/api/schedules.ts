@@ -24,6 +24,7 @@ export const removeCategoryFromSchedule = async <T = unknown>(
     throw new Error("User ID is required to remove a category.");
   }
 
+  // note: userId is passed in headers for authentication
   return apiDelete<T>(`/schedule/category/${categoryId}`, {
     headers: { "Clerk-User-Id": userId },
   });
