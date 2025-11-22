@@ -5,7 +5,7 @@ import { useAuth } from "@clerk/nextjs";
 import TwoColumnLayout from "@components/TwoColumnLayout";
 import { EventInput } from "@fullcalendar/core";
 import ProfileSidebar from "./components/ProfileSidebar";
-import { Course, Club } from "./utils/types";
+import { Course, Club } from "./types";
 import { getSchedule, removeCategoryFromSchedule } from "./utils/api/schedules";
 import Calendar from "./components/Calendar";
 import { useEventState } from "~/context/EventStateContext";

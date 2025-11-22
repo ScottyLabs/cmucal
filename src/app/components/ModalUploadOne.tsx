@@ -8,7 +8,7 @@ import { ReactNode, useState, useEffect } from "react";
 import axios from 'axios';
 import { useUser } from "@clerk/nextjs";
 import { getAdminCategories } from '../utils/api/users';
-import { CategoryOrg } from '../utils/types';
+import { CategoryOrg } from '../types';
 
 type ModalProps = {
   // showUploadModalOne: boolean;

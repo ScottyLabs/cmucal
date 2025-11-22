@@ -15,7 +15,7 @@ import Button from '@mui/material/Button';
 import Checkbox from '@mui/material/Checkbox';
 import { useGcalEvents } from "../../context/GCalEventsContext";
 import { formatGCalEvent } from "../utils/calendarUtils";
-import { CalendarFields } from "../utils/types";
+import { CalendarFields } from "../types";
 import { checkGoogleAuthStatus, fetchBulkEventsFromCalendars, unauthorizeGoogle } from "../utils/api/googleCalendar";
 import { API_BASE_URL } from "../utils/api/api";
 import Modal from "./Modal";

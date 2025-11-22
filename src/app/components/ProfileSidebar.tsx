@@ -4,7 +4,7 @@ import { useState } from "react";
 import { FiChevronUp, FiChevronDown, FiEye, FiEdit3, FiSearch } from "react-icons/fi";
 import Accordion from "./Accordion";
 import ToggleItem from "./ToggleItem";
-import { Course, Club, ClubOrganization, CourseOption } from "../utils/types";
+import { Course, Club, ClubOrganization, CourseOption } from "../types";
 import { getClubOrganizations, addOrgToSchedule, removeOrgFromSchedule, getCourseOrgs } from "../utils/api/organizations";
 
 interface ProfileSidebarProps {

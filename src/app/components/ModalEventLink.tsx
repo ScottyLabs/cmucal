@@ -12,7 +12,7 @@ import axios from 'axios';
 import { useUser } from "@clerk/nextjs";
 import { useEventState } from "../../context/EventStateContext";
 import Modal from './Modal';
-import { GCalLinkPayloadType } from "../utils/types";
+import { GCalLinkPayloadType } from "../types";
 import { readIcalLink } from "../utils/api/events";
 
 

@@ -1,7 +1,7 @@
 "use client";
 
 
-import { Event } from "../utils/types";
+import { Event } from "../types";
 import { formatDateRange } from "../utils/formatters";
 import { FiEdit } from "react-icons/fi";
 import { MdOutlinePlace, MdOutlineAccessTime, MdOutlineSchool, MdOutlinePeople } from "react-icons/md";

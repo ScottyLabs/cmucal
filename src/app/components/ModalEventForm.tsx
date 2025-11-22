@@ -37,7 +37,7 @@ import { useUser } from "@clerk/nextjs";
 import CustomRecurrenceModal from "./CustomRecurrenceModal"; 
 import { set } from "lodash";
 import { start } from "repl";
-import { RecurrenceInput, EventPayloadType, CourseOption } from "../utils/types";
+import { RecurrenceInput, EventPayloadType, CourseOption } from "../types";
 import { createEvent, fetchAllTags } from "../utils/api/events";
 import { getCourseOrgs } from "../utils/api/organizations";
 import { formatRecurrence, toDBRecurrenceEnds, toRRuleFrequency, getNthDayOfWeekInMonth, isLastWeekdayInMonth } from "../utils/dateService";
