@@ -72,7 +72,7 @@ const Accordion: React.FC<AccordionProps> = ({ title, subtitle, children, onRemo
         </div>
       </div>
       {isOpen && (
-        <div className="mt-2 pl-5">
+        <div className="pl-5">
           {children}
         </div>
       )}
