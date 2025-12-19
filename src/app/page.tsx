@@ -26,9 +26,9 @@ export default function Home() {
 
   const [currentScheduleId, setCurrentScheduleId] = useState<string | number | null>(null);
 
-  const fetchSchedule = useCallback(async (scheduleId?: string | number) => {
+  const fetchSchedule = useCallback(async (scheduleId?: string | number, silent = false) => {
     if (!isLoaded || !userId) return;
-    setLoading(true);
+    if (!silent) setLoading(true);
     try {
       const data = await getSchedule(userId, scheduleId);
       if (data) {
@@ -38,7 +38,7 @@ export default function Home() {
     } catch (error) {
       console.error("Failed to fetch schedule", error);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }, [isLoaded, userId]);
 
@@ -141,7 +141,7 @@ export default function Home() {
           onRemoveCategory={handleRemoveCategory}
           onEventToggle={handleEventToggle}
           currentScheduleId={currentScheduleId ? Number(currentScheduleId) : undefined}
-          onScheduleUpdate={() => fetchSchedule(currentScheduleId || undefined)}
+          onScheduleUpdate={() => fetchSchedule(currentScheduleId || undefined, true)}
         />
       } 
       // rightContent={<Calendar events={calendarEvents} setEvents={setCalendarEvents} setEventId={() => {}}/>} 

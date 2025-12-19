@@ -78,10 +78,12 @@ const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
       console.log('Calling addOrgToSchedule with:', currentScheduleId, clubId);
       await addOrgToSchedule(currentScheduleId, clubId);
       console.log('Successfully added club to schedule');
-      onScheduleUpdate?.(); // Refresh the schedule data
+      setIsClubsEditMode(false);
+      onScheduleUpdate?.();
     } catch (error) {
       console.error('Failed to add club to schedule:', error);
       alert('Failed to add club to schedule. Please try again.');
+      onScheduleUpdate?.();
     }
   };
 
@@ -97,10 +99,12 @@ const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
       console.log('Calling removeOrgFromSchedule with:', currentScheduleId, clubId);
       await removeOrgFromSchedule(currentScheduleId, clubId);
       console.log('Successfully removed club from schedule');
-      onScheduleUpdate?.(); // Refresh the schedule data
+      setIsClubsEditMode(false);
+      onScheduleUpdate?.();
     } catch (error) {
       console.error('Failed to remove club from schedule:', error);
       alert('Failed to remove club from schedule. Please try again.');
+      onScheduleUpdate?.();
     }
   };
 
@@ -116,10 +120,12 @@ const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
       console.log('Calling addOrgToSchedule with:', currentScheduleId, courseId);
       await addOrgToSchedule(currentScheduleId, parseInt(courseId));
       console.log('Successfully added course to schedule');
-      onScheduleUpdate?.(); // Refresh the schedule data
+      setIsCoursesEditMode(false);
+      onScheduleUpdate?.();
     } catch (error) {
       console.error('Failed to add course to schedule:', error);
       alert('Failed to add course to schedule. Please try again.');
+      onScheduleUpdate?.();
     }
   };
 
@@ -135,10 +141,12 @@ const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
       console.log('Calling removeOrgFromSchedule with:', currentScheduleId, courseId);
       await removeOrgFromSchedule(currentScheduleId, courseId);
       console.log('Successfully removed course from schedule');
-      onScheduleUpdate?.(); // Refresh the schedule data
+      setIsCoursesEditMode(false);
+      onScheduleUpdate?.();
     } catch (error) {
       console.error('Failed to remove course from schedule:', error);
       alert('Failed to remove course from schedule. Please try again.');
+      onScheduleUpdate?.();
     }
   };
 
@@ -411,22 +419,17 @@ const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
                   color="green"
                 >
                   {club.categories.map(category => (
-                    <div key={category.id} className="mb-4">
-                      <div className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-2">
-                        {category.name}
-                      </div>
-                      {club.events[category.name]?.map(event => (
-                        <ToggleItem
-                          key={event.id}
-                          label={event.title}
-                          checked={toggledCategories[event.id] ?? false}
-                          onChange={() => {
-                            handleToggle(event.id);
-                            onEventToggle?.(event.id, !toggledCategories[event.id]);
-                          }}
-                          color="green"
-                        />
-                      ))}
+                    <div key={category.id} className="mb-2">
+                      <ToggleItem
+                        key={category.id}
+                        label={category.name}
+                        checked={toggledCategories[category.id] ?? false}
+                        onChange={() => {
+                          handleToggle(category.id);
+                          onEventToggle?.(category.id, !toggledCategories[category.id]);
+                        }}
+                        color="green"
+                      />
                     </div>
                   ))}
                 </Accordion>
