@@ -9,8 +9,6 @@ import { FaRegUser } from "react-icons/fa"; // User icon
 import { BsCalendar3 } from "react-icons/bs"; // Calendar icon
 import { ReactNode } from "react";
 
-// import ModalUploadOne from "./ModalUploadOne"; 
-// import ModalEventForm from "./ModalEventForm"; 
 import { useEventState } from "../../context/EventStateContext";
 import { useUser } from "@clerk/clerk-react";
 
@@ -22,13 +20,6 @@ import Select, { SelectChangeEvent } from '@mui/material/Select';
 import axios from 'axios';
 import { getUserID } from "../utils/api/users";
 import { API_BASE_URL } from "../utils/api/api";
-
-// import dynamic from 'next/dynamic';
-// // Dynamically import ModalUploadOne
-// const ModalUploadOne = dynamic(() => import('./ModalUploadOne'), {
-//   ssr: false,
-// });
-
 
 
 type NavBarProps = {
@@ -258,8 +249,8 @@ export default function Navbar({ UserButton }: NavBarProps) {
             </div>
           )}
           
+          {/* Modal component */}
           <button
-            // onClick={() => setShowUploadModalOne(true)}
             onClick={() => openPreUpload()}
             className="px-4 py-2 border rounded-md bg-gray-100 dark:bg-gray-600 hover:bg-gray-200 dark:hover:bg-gray-500"
           >
@@ -267,16 +258,6 @@ export default function Navbar({ UserButton }: NavBarProps) {
           </button>
 
         </div>
-
-        {/* Middle Section: Search Bar */}
-        {/* <div className="relative flex items-center w-full max-w-md">
-          <FiSearch className="absolute left-3 text-gray-500 dark:text-gray-300" size={16} />
-          <input
-            type="text"
-            placeholder="Search for a schedule or event..."
-            className="w-full p-2 pl-10 border rounded-md bg-white dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-1 focus:ring-gray-400 dark:focus:ring-gray-500"
-          />
-        </div> */}
 
         {/* Right Section: Upload Button, dark mode, logout */}
         <div className="flex items-center space-x-2">
@@ -299,31 +280,7 @@ export default function Navbar({ UserButton }: NavBarProps) {
             </button>
           )}
           <div>{UserButton}</div>
-          {/* <Link href="/" className="flex items-center px-3 py-2 space-x-2">
-            <FiLogOut className="text-gray-600 dark:text-white" size={16} />
-            <span className="text-sm font-medium">Sign out</span>
-          </Link> */}
         </div>
-
-      {/* Modal component */}
-      {/* {showUploadModalOne && (
-        <ModalUploadOne
-          showUploadModalOne={showUploadModalOne}
-          setShowUploadModalOne={setShowUploadModalOne}
-          showUploadModalTwo={showUploadModalTwo}
-          setShowUploadModalTwo={setShowUploadModalTwo}
-          setSelectedCategory={setSelectedCategory}
-          onClose={() => setShowUploadModalOne(false)}
-        />
-      )} */}
-
-      {/* {showUploadModalTwo && (
-        <ModalEventForm
-          show={showUploadModalTwo}
-          onClose={() => setShowUploadModalTwo(false)}
-          selectedCategory={selectedCategory}
-        />
-      )} */}
 
       </nav>
     </>

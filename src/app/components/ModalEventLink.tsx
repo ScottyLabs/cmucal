@@ -8,13 +8,12 @@ import timezonePlugin from "dayjs/plugin/timezone";
 dayjs.extend(utc);
 dayjs.extend(timezonePlugin);
 
-import axios from 'axios';
+import axios from "axios";
 import { useUser } from "@clerk/nextjs";
 import { useEventState } from "../../context/EventStateContext";
-import Modal from './Modal';
+import Modal from "./Modal";
 import { GCalLinkPayloadType } from "../utils/types";
 import { readIcalLink } from "../utils/api/events";
-
 
 interface ModalProps {
   show: boolean;
@@ -22,16 +21,17 @@ interface ModalProps {
   selectedCategory?: any; // Optional prop for selected category
 }
 
-
-const eventTypesDict = {"Academic": "ACADEMIC", "Career": "CAREER", "Club": "CLUB"};
+const eventTypesDict = { Academic: "ACADEMIC", Career: "CAREER", Club: "CLUB" };
 type EventTypeLabel = keyof typeof eventTypesDict;
-type EventTypeValue = typeof eventTypesDict[EventTypeLabel];
+type EventTypeValue = (typeof eventTypesDict)[EventTypeLabel];
 
-
-
-export default function ModalEventLink({ show, onClose, selectedCategory }: ModalProps) {
+export default function ModalEventLink({
+  show,
+  onClose,
+  selectedCategory,
+}: ModalProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const { user } = useUser();  // clerk user object
+  const { user } = useUser(); // clerk user object
 
   const [selectedEventType, setSelectedEventType] = useState<string>("");
   const [eventTypeError, setEventTypeError] = useState(false);
@@ -45,10 +45,6 @@ export default function ModalEventLink({ show, onClose, selectedCategory }: Moda
   const [optionError, setOptionError] = useState(false);
   const { openUpload } = useEventState();
 
-
-  
-
-
   const reset = () => {
     setSelectedEventType("");
     setGcalLink("");
@@ -57,24 +53,22 @@ export default function ModalEventLink({ show, onClose, selectedCategory }: Moda
     setEventTypeError(false);
     setGcalLinkError(false);
     setOptionError(false);
-  }
+  };
 
   const validate = () => {
     const isEventTypeInvalid = !selectedEventType && !selectManual;
-    const isRightFormat = selectManual || gcalLink.trim().startsWith("https://calendar.google.com/calendar/ical/");
+    const isRightFormat =
+      selectManual ||
+      gcalLink.trim().startsWith("https://calendar.google.com/calendar/ical/");
+    const isPublic = gcalLink.trim().includes("public/basic.ics");
     const noOptionSelected = !gcalLink && !selectManual;
 
     setEventTypeError(isEventTypeInvalid);
     setOptionError(noOptionSelected);
-    setGcalLinkError(!isRightFormat);
+    setGcalLinkError(!isRightFormat || !isPublic);
 
-    return !(
-      isEventTypeInvalid ||
-      noOptionSelected ||
-      !isRightFormat
-    );
+    return !(isEventTypeInvalid || noOptionSelected || !isRightFormat || !isPublic);
   };
-
 
   const handleSubmit = async () => {
     const isValid = validate();
@@ -87,58 +81,55 @@ export default function ModalEventLink({ show, onClose, selectedCategory }: Moda
       if (selectManual) {
         openUpload(selectedCategory, selectedEventType);
         return;
-      }
-
-      else if (gcalLink.trim()) {
+      } else if (gcalLink.trim()) {
         if (!user?.id) {
           alert("User not found.");
           return;
         }
 
-        const payload : GCalLinkPayloadType = {
+        const payload: GCalLinkPayloadType = {
           gcal_link: gcalLink,
           org_id: selectedCategory.org_id,
           category_id: selectedCategory.id,
-          clerk_id: user.id
+          clerk_id: user.id,
         };
 
         console.log("Submitting payload:", payload);
-          
-        const res = await readIcalLink(payload);
 
-        // for future improvement, will add a page for users to view their uploaded events
-        // and then redirect to that page after successful upload
-        console.log("Response from readIcalLink:", res);
-        if (res.status === 201) {
+        try {
+          const res = await readIcalLink(payload);
+          console.log("Response from readIcalLink:", res);
+          // 201 from backend = success
           alert("Events created successfully!");
-          onClose(); // ✅ only close modal if backend call succeeds
-        } else {
-          alert("Something went wrong while submitting.");
+          onClose(); // only close modal on success
+        } catch (err: any) {
+          console.error("readIcalLink failed:", err);
+          const message =
+            err?.response?.data?.message ??
+            "Something went wrong while submitting.";
+          alert("Unable to upload: " + message);
         }
       }
-          
     } catch (err) {
       console.error("Submission error:", err);
       alert("Failed to submit. Please try again.");
     }
   };
 
-
   if (!show || !selectedCategory || !user) return null;
-
 
   return (
     <Modal show={show} onClose={onClose}>
-      <h2 className="text-xl font-semibold mb-4">
+      <h2 className="mb-4 text-xl font-semibold">
         Upload to {selectedCategory.organization_name} — {selectedCategory.name}
       </h2>
 
       {/* Event Type */}
-      <div className="flex space-x-2 mb-3">
-        {['Academic', 'Career', 'Club'].map((eventType) => (
+      <div className="mb-3 flex space-x-2">
+        {["Academic", "Career", "Club"].map((eventType) => (
           <button
             key={eventType}
-            className={`px-3 py-1 rounded text-sm ${
+            className={`rounded px-3 py-1 text-sm ${
               eventType === selectedEventType ? "bg-blue-400" : "bg-blue-200"
             }`}
             onClick={() => setSelectedEventType(eventType)}
@@ -149,21 +140,22 @@ export default function ModalEventLink({ show, onClose, selectedCategory }: Moda
       </div>
 
       {eventTypeError && (
-        <p className="text-red-500 text-sm mb-4">
+        <p className="mb-4 text-sm text-red-500">
           Please select an event type.
         </p>
       )}
 
       {/* GCal Link Input */}
       <div
-        className={`w-full cursor-pointer p-4 rounded-md border-2 mb-4 transition-colors
-          ${gcalSelected ? "border-blue-200 bg-amber-100 dark:bg-gray-800" : "border-gray-300 hover:border-blue-200 hover:bg-amber-100 dark:hover:bg-gray-800"}`}
+        className={`mb-4 w-full cursor-pointer rounded-md border-2 p-4 transition-colors ${gcalSelected ? "border-blue-200 bg-amber-100 dark:bg-gray-800" : "border-gray-300 hover:border-blue-200 hover:bg-amber-100 dark:hover:bg-gray-800"}`}
         onClick={() => {
           setSelectManual(false);
           setGcalSelected(true);
         }}
       >
-        <p className="text-md font-medium text-gray-800 dark:text-white mb-2">Read events from an iCal link</p>
+        <p className="text-md mb-2 font-medium text-gray-800 dark:text-white">
+          Read events from an iCal link
+        </p>
         <input
           type="text"
           placeholder="https://calendar.google.com/calendar/ical/..."
@@ -171,21 +163,22 @@ export default function ModalEventLink({ show, onClose, selectedCategory }: Moda
           onChange={(e) => {
             setGcalLink(e.target.value);
           }}
-          className="w-full p-2 border rounded-md mb-2 bg-white dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-1 focus:ring-gray-400 dark:focus:ring-gray-600"
+          className="mb-2 w-full rounded-md border bg-white p-2 focus:outline-none focus:ring-1 focus:ring-gray-400 dark:bg-gray-700 dark:text-white dark:focus:ring-gray-600"
         />
 
-
-        <p className="text-xs text-gray-400 mb-4">
-          Need help? Go to Google Calendar &gt; Calendar Settings &gt; copy and paste the "Secret address in iCal format".
+        <p className="mb-4 text-xs text-gray-400">
+          Need help? Go to Google Calendar &gt; Calendar Settings &gt; select "Make available to public" and  "See all event details" &gt; copy and
+          paste the "Public address in iCal format".
         </p>
         {optionError && (
-          <p className="text-red-500 text-sm mb-4">
-            Please provide a Google Calendar link or select "Manually fill out the form".
+          <p className="mb-4 text-sm text-red-500">
+            Please provide a Google Calendar link or select "Manually fill out
+            the form".
           </p>
         )}
         {gcalLinkError && !optionError && (
-          <p className="text-red-500 text-sm mb-4">
-            Please enter a valid Google Calendar iCal link.
+          <p className="mb-4 text-sm text-red-500">
+            Please enter a valid Google Calendar iCal link and make sure it is public.
           </p>
         )}
       </div>
@@ -197,30 +190,25 @@ export default function ModalEventLink({ show, onClose, selectedCategory }: Moda
           setSelectManual(true);
           setGcalLink(""); // mutually exclusive: clear gcal link
           setGcalSelected(false); // reset gcal selection
-          
         }}
-        className={`w-full cursor-pointer p-4 rounded-md border-2 mb-4 transition-colors
-          ${selectManual ? "border-blue-200 bg-amber-100 dark:bg-gray-800" : "border-gray-300 hover:border-blue-200 hover:bg-amber-100 dark:hover:bg-gray-800"}`}
+        className={`mb-4 w-full cursor-pointer rounded-md border-2 p-4 transition-colors ${selectManual ? "border-blue-200 bg-amber-100 dark:bg-gray-800" : "border-gray-300 hover:border-blue-200 hover:bg-amber-100 dark:hover:bg-gray-800"}`}
       >
         <p className="text-md font-medium text-gray-800 dark:text-white">
           Manually fill out the form
         </p>
       </div>
 
-
-
-
       {/* Buttons */}
       <div className="flex justify-end gap-4">
         <button
-          className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600"
+          className="rounded-md bg-gray-300 px-4 py-2 text-gray-700 hover:bg-gray-400 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600"
           onClick={reset}
         >
           Reset
         </button>
 
         <button
-          className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600"
+          className="rounded-md bg-gray-300 px-4 py-2 text-gray-700 hover:bg-gray-400 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600"
           onClick={() => {
             handleSubmit();
           }}
