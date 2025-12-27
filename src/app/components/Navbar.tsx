@@ -11,7 +11,7 @@ import { GrUserManager } from "react-icons/gr"; // Manager icon
 import { useRouter } from "next/navigation";
 
 import { useEventState } from "../../context/EventStateContext";
-import { useUser } from "@clerk/clerk-react";
+import { useUser } from "@clerk/nextjs";
 import { UserButton } from "@clerk/nextjs";
 
 import { ConnectGoogleButton } from "./ConnectGoogleButton";
