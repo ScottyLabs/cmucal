@@ -25,8 +25,8 @@ export default function AdminPage() {
   return (
     <div className="flex h-[calc(99vh-80px)]">
       <TwoColumnLayout
-        leftContent={<div className="p-4">Manager Sidebar Content</div>}
-        rightContent={<div className="p-4">Manager Main Content Area</div>}
+        leftContent={<div className="p-4">Admin Sidebar Content</div>}
+        rightContent={<div className="p-4">Admin Main Content Area</div>}
       />
     </div>
   );
