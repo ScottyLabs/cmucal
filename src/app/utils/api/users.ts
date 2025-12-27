@@ -32,3 +32,15 @@ export const loginWithClerk = async (
     throw new Error("Login failed");
   }
 };
+
+interface RoleResponse {
+    is_manager: boolean;
+    is_admin: boolean;
+    roles: [string, string][];
+}
+
+export const getUserRole = (clerkId: string) => {
+    return apiGet<RoleResponse>("/users/get_role", {
+        headers: { "Clerk-User-Id": clerkId },
+    });
+}

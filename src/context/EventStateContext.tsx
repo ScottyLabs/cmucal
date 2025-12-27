@@ -42,7 +42,7 @@ export const EventStateProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     if (!user?.id) return; // prevents requesting with invalid user ID
     async function fetchSaved() {
       try {
-        console.log("😮Fetching saved events for user:", user?.id);
+        // console.log("😮Fetching saved events for user:", user?.id);
         const response = await axios.get(`${API_BASE_URL}/events/user_saved_events`, {
           params: {
             user_id: user?.id,

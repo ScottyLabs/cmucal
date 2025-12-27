@@ -7,7 +7,10 @@ It is bootstrapped with `create-t3-app`.
 ## How to run
 - Frontend: `npm run dev` for now.
     - Note: we will fix type errors around November. Run `npm run build` to see all the errors.
-- Backend: see the `readme` file in the backend folder.
+- Backend: see the `readme` file in the backend folder at https://github.com/scottylabs-labrador/cmucal-backend.
+
+## How to test
+- run `npm run test`
 
 ## Deployment
 - Deployed on Vercel.

@@ -7,10 +7,12 @@ import Link from "next/link";
 import { FiSearch, FiMoon, FiSun, FiLogOut } from "react-icons/fi"; // Search, dark mode, logout
 import { FaRegUser } from "react-icons/fa"; // User icon
 import { BsCalendar3 } from "react-icons/bs"; // Calendar icon
-import { ReactNode } from "react";
+import { GrUserManager } from "react-icons/gr"; // Manager icon
+import { useRouter } from "next/navigation";
 
 import { useEventState } from "../../context/EventStateContext";
-import { useUser } from "@clerk/clerk-react";
+import { useUser } from "@clerk/nextjs";
+import { UserButton } from "@clerk/nextjs";
 
 import { ConnectGoogleButton } from "./ConnectGoogleButton";
 
@@ -20,13 +22,14 @@ import Select, { SelectChangeEvent } from '@mui/material/Select';
 import axios from 'axios';
 import { getUserID } from "../utils/api/users";
 import { API_BASE_URL } from "../utils/api/api";
+import { fetchRole } from "../utils/authService";
 
 
-type NavBarProps = {
-  UserButton: ReactNode;
-};
+// type NavBarProps = {
+//   UserButton: ReactNode;
+// };
 
-export default function Navbar({ UserButton }: NavBarProps) {
+export default function Navbar() {
 
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
@@ -41,8 +44,11 @@ export default function Navbar({ UserButton }: NavBarProps) {
   const [selectedSchedule, setSelectedSchedule] = useState<string>('');
   const [showNewScheduleInput, setShowNewScheduleInput] = useState(false);
   const [newScheduleName, setNewScheduleName] = useState('');
+  const [userRole, setUserRole] = useState<string | null>(null);
 
   const { user } = useUser();  // clerk user object
+  const router = useRouter();
+
 
   const getUserIdFromClerkId = async (clerkId: string) => {
     try {
@@ -133,6 +139,8 @@ export default function Navbar({ UserButton }: NavBarProps) {
             });
             window.dispatchEvent(changeEvent);
           }
+          const role = await fetchRole(user?.id);
+          setUserRole(role);
         } else {
           console.error("Failed to retrieve user ID from Clerk ID");
         }
@@ -147,6 +155,16 @@ export default function Navbar({ UserButton }: NavBarProps) {
   if (!userId) {
     return <div>Loading...</div>;
   }
+
+  const handleAdminDashboardRedirect = () => {
+    if (userRole === "manager") {
+      router.push("/manager");
+    } else if (userRole === "admin") {
+      router.push("/admin");
+    } else {
+      router.push("/"); // fallback
+    }
+  };
 
   return (
     <>
@@ -279,7 +297,19 @@ export default function Navbar({ UserButton }: NavBarProps) {
               )}
             </button>
           )}
-          <div>{UserButton}</div>
+          <div> 
+            <UserButton>
+              {(userRole === "manager" || userRole === "admin") && (
+                <UserButton.MenuItems>
+                  <UserButton.Action
+                    label="Open Admin Dashboard"
+                    labelIcon={<GrUserManager />}
+                    onClick={() => handleAdminDashboardRedirect()}
+                  />
+                </UserButton.MenuItems>
+              )}
+            </UserButton>
+          </div>
         </div>
 
       </nav>
