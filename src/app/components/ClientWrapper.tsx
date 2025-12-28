@@ -33,7 +33,7 @@ export default async function ClientWrapper({ children }: { children: React.Reac
       <EventStateProvider>
         <ThemeProvider>
           <SignedIn>
-            <Navbar UserButton={<UserButton />} />
+            <Navbar />
           </SignedIn>
           <SignedOut>
             <SignedOutNav />

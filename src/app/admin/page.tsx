@@ -1,27 +1,33 @@
 "use client";
 import { useState, useEffect } from "react";
 import useRoleRedirect from "../utils/redirect";
+import TwoColumnLayout from "../components/TwoColumnLayout";
+import { useUser } from "@clerk/nextjs";
+import { fetchRole } from "../utils/authService";
+
 
 export default function AdminPage() {
-  const [userRole, setUserRole] = useState<string | null>(null);
+    const [userRole, setUserRole] = useState<string | null>(null);
+  const { user } = useUser();
 
   useEffect(() => {
-    async function fetchRole() {
-      const response = await fetch("http://127.0.0.1:5001/api/auth/role");
-      const data = await response.json();
-      setUserRole(data.role);
-    }
-    fetchRole();
-  }, []);
+    const fetchUserRole = async () => {
+      const role = await fetchRole(user?.id);
+      setUserRole(role);
+    };
+    fetchUserRole();
+  }, [user?.id]);
 
   useRoleRedirect("admin", userRole); // Redirect non-admins
 
-  if (!userRole) return <p>Loading...</p>;
+  if (!userRole) return <p>Finding user role...</p>;
 
   return (
-    <div>
-      <h1>Admin Dashboard</h1>
-      <p>Only admins can see this page.</p>
+    <div className="flex h-[calc(99vh-80px)]">
+      <TwoColumnLayout
+        leftContent={<div className="p-4">Admin Sidebar Content</div>}
+        rightContent={<div className="p-4">Admin Main Content Area</div>}
+      />
     </div>
   );
 }
