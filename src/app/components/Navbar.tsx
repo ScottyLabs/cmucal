@@ -168,81 +168,97 @@ export default function Navbar() {
 
   return (
     <>
-      <nav className="flex sticky top-0 z-50 items-center justify-between p-3 border-b bg-white dark:bg-gray-800">
-        {/* Left Section: User & Search */}
-        <div className="flex items-center space-x-2">
-          {/* User Icon (Links to Profile Page) */}
-          <Link href="/">
-            <div
-              className={`flex items-center justify-center w-10 h-10 rounded-md cursor-pointer dark:bg-gray-600
-                ${pathname === "/" ? "bg-gray-500 text-white" : "bg-gray-200 text-gray-600 hover:bg-gray-300"}
-              `}
-            >
-              <FaRegUser className="text-gray-600 dark:text-white" size={18} />
-            </div>
-          </Link>
+      <nav className="flex sticky top-0 z-50 items-center justify-between px-4 py-3 border-b border-b-gray-300 dark:border-b-gray-600 bg-white dark:bg-gray-800 shadow-md">
+        {/* Left Section: Title + Segmented Selector + Schedule Dropdown */}
+        <div className="flex items-center gap-3">
+          {/* CMUCal Title */}
+          <h1 className="text-xl font-semibold text-gray-800 dark:text-white">CMUCal</h1>
+          
+          {/* Segmented Selector for Home/Explore */}
+          <div className="h-10 flex items-center border border-gray-300 rounded-lg bg-white dark:bg-gray-700 dark:border-gray-600 overflow-hidden">
+            <Link href="/" className="flex-1">
+              <div
+                className={`flex items-center justify-center h-10 px-3 cursor-pointer transition-colors
+                  ${pathname === "/" 
+                    ? "bg-gray-100 dark:bg-gray-600" 
+                    : "hover:bg-gray-50 dark:hover:bg-gray-600"}
+                `}
+              >
+              <FaRegUser className="w-5 h-5 text-gray-700 dark:text-gray-300" size={18} />
+              </div>
+            </Link>
 
-          {/* Search Button (Links to Search Page) */}
-          <Link href="/explore">
-            <div className={`flex items-center justify-center w-10 h-10 rounded-md cursor-pointer dark:bg-gray-600
-              ${pathname === "/explore" ? "bg-gray-500 text-white" : "bg-gray-200 text-gray-600 hover:bg-gray-300"}`}>
-              <FiSearch className="text-gray-600 dark:text-white" size={18} />
-            </div>
-          </Link>
+            {/* Dividing line */}
+            <div className="w-px h-full bg-gray-300 dark:bg-gray-600"></div>
 
-          {/* Term Selector Dropdown */}
-          {/* <button className="flex items-center px-3 py-2.5 space-x-2 border rounded-md dark:border-gray-600">
-            <BsCalendar3 className="text-gray-600 dark:text-white" size={16} />
-            <select
-              value={term}
-              onChange={handleTermChange}
-              className="bg-transparent text-sm text-gray-800 dark:text-white focus:outline-none appearance-none"
+            <Link href="/explore" className="flex-1">
+              <div className={`flex items-center justify-center h-10 px-3 cursor-pointer transition-colors
+                ${pathname === "/explore" 
+                  ? "bg-gray-100 dark:bg-gray-600" 
+                  : "hover:bg-gray-50 dark:hover:bg-gray-600"}`}>
+                <FiSearch className="w-5 h-5 text-gray-700 dark:text-gray-300" size={20} />
+              </div>
+            </Link>
+          </div>
+
+          {/* Schedule Selector - Button or Dropdown */}
+          {schedules.length === 0 ? (
+            // Show button when no schedules exist
+            <button
+              onClick={() => setShowNewScheduleInput(true)}
+              className="h-10 px-4 py-2 text-sm font-medium border border-gray-300 rounded-lg bg-white dark:bg-gray-700 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors flex items-center gap-2"
             >
-              <option value="Spring 25">Spring 25</option>
-              <option value="Fall 24">Fall 24</option>
-            </select>
-          </button> */}
-          <FormControl sx={{ m: 1, minWidth: 120}} size="small">
-            <Select
-              value={selectedSchedule}
-              onChange={handleScheduleChange}
-              displayEmpty
-              inputProps={{ 'aria-label': 'Without label' }}
-              sx={{
-                border: "1px solid #f1f1f1",
-                '&:focus': {
-                  border: "1px solid #f1f1f1",
-                },
-                '& .MuiSelect-icon': {
-                  display: "none",
-                },
-                '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                  border: "1px solid #f1f1f1",
-                },
-                '&.Mui-focused': {
-                  boxShadow: "none",
-                  border: "1px solid #f1f1f1"
-                }
-              }}
-            >
-              {schedules.map((schedule) => (
-                <MenuItem key={schedule.id} value={schedule.name}>
-                  <div className="flex items-center space-x-2">
-                    <BsCalendar3 className="text-gray-600 dark:text-white" size={16} />
-                    <span className="text-sm text-gray-800 dark:text-white">{schedule.name}</span>
+              <BsCalendar3 className="text-gray-600 dark:text-gray-300" size={16} />
+              <span>Create Schedule</span>
+            </button>
+          ) : (
+            // Show dropdown when schedules exist
+            <FormControl sx={{ minWidth: 120 }} size="small">
+              <Select
+                value={selectedSchedule}
+                onChange={handleScheduleChange}
+                displayEmpty
+                inputProps={{ 'aria-label': 'Schedule selector' }}
+                sx={{
+                  border: "1px solid #D1D5DB",
+                  borderRadius: "8px",
+                  '& .MuiOutlinedInput-notchedOutline': {
+                    border: "none",
+                  },
+                  '&:hover': {
+                    backgroundColor: "#f9fafb",
+                  },
+                  '&.Mui-focused': {
+                    boxShadow: "none",
+                    border: "1px solid #e5e7eb"
+                  },
+                  height: "40px",
+                  backgroundColor: "white",
+                  '.dark &': {
+                    backgroundColor: "#374151",
+                    border: "1px solid #4D5461",
+                  }
+                }}
+              >
+                {schedules.map((schedule) => (
+                  <MenuItem key={schedule.id} value={schedule.name}>
+                    <div className="flex items-center gap-2">
+                      <BsCalendar3 className="text-gray-600 dark:text-white" size={16} />
+                      <span className="text-sm text-gray-800 dark:text-white">{schedule.name}</span>
+                    </div>
+                  </MenuItem>
+                ))}
+                <MenuItem value="new" onClick={() => setShowNewScheduleInput(true)}>
+                  <div className="flex items-center gap-2 text-blue-500">
+                    <span className="text-sm">+ Create New Schedule</span>
                   </div>
                 </MenuItem>
-              ))}
-              <MenuItem value="new" onClick={() => setShowNewScheduleInput(true)}>
-                <div className="flex items-center space-x-2 text-blue-500">
-                  <span className="text-sm">+ Create New Schedule</span>
-                </div>
-              </MenuItem>
-            </Select>
-          </FormControl>
+              </Select>
+            </FormControl>
+          )}
           
           {showNewScheduleInput && (
-            <div className="absolute mt-2 p-2 bg-white dark:bg-gray-800 border rounded-md shadow-lg z-50">
+            <div className="absolute top-16 left-4 mt-2 p-3 bg-white dark:bg-gray-800 border rounded-md shadow-lg z-50">
               <input
                 type="text"
                 value={newScheduleName}
@@ -250,7 +266,7 @@ export default function Navbar() {
                 placeholder="Schedule name"
                 className="w-full p-2 border rounded-md mb-2 dark:bg-gray-700 dark:text-white"
               />
-              <div className="flex justify-end space-x-2">
+              <div className="flex justify-end gap-2">
                 <button
                   onClick={() => setShowNewScheduleInput(false)}
                   className="px-3 py-1 text-sm text-gray-600 hover:text-gray-800 dark:text-gray-300"
@@ -266,37 +282,48 @@ export default function Navbar() {
               </div>
             </div>
           )}
-          
-          {/* Modal component */}
+        </div>
+
+        {/* Center Section: Search Bar */}
+        {/* TODO: THIS DOESNT ACTUALLY DO ANYTHING */}
+        <div className="flex-1 max-w-2xl mx-4">
+          <div className="relative">
+            <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-400" size={18} />
+            <input
+              type="text"
+              placeholder="Search for a schedule or event..."
+              className="h-10 w-full pl-10 pr-4 py-2 rounded-lg bg-white dark:bg-transparent dark:text-white hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:shadow-md transition-shadow"
+            />
+          </div>
+        </div>
+
+        {/* Right Section: Upload, Connect Google, Dark Mode, User Button */}
+        <div className="flex items-center gap-3">
+          {/* Upload Button */}
           <button
             onClick={() => openPreUpload()}
-            className="px-4 py-2 border rounded-md bg-gray-100 dark:bg-gray-600 hover:bg-gray-200 dark:hover:bg-gray-500"
+            className="h-10 px-4 py-2 text-sm font-medium border border-gray-300 rounded-lg bg-white dark:bg-gray-700 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
           >
             Upload
           </button>
 
-        </div>
-
-        {/* Right Section: Upload Button, dark mode, logout */}
-        <div className="flex items-center space-x-2">
-
-          {/* Inside Right Section */}
-          
           <ConnectGoogleButton />
-          {/* Moon Icon for Dark Mode Toggle */}
-          {/* Dark Mode Toggle Button */}
+          
+          {/* Dark Mode Toggle */}
           {mounted && (
             <button
               onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-              className="flex items-center justify-center w-10 h-10 pl-2 rounded-md cursor-pointer"
+              className="flex items-center justify-center w-10 h-10 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
             >
               {theme === "dark" ? (
-                <FiSun className="text-yellow-400" size={18} /> // Sun icon for Light mode
+                <FiSun className="text-yellow-400" size={20} />
               ) : (
-                <FiMoon className="text-gray-600 dark:text-white" size={18} /> // Moon icon for Dark mode
+                <FiMoon className="text-gray-600 dark:text-white" size={20} />
               )}
             </button>
           )}
+          
+          {/* User Button */}
           <div> 
             <UserButton>
               {(userRole === "manager" || userRole === "admin") && (
@@ -311,7 +338,6 @@ export default function Navbar() {
             </UserButton>
           </div>
         </div>
-
       </nav>
     </>
   );

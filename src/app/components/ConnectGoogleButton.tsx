@@ -5,14 +5,6 @@ import { useUser, useAuth } from "@clerk/nextjs";
 import { useEffect, useState } from "react";
 
 import * as React from 'react';
-import OutlinedInput from '@mui/material/OutlinedInput';
-import InputLabel from '@mui/material/InputLabel';
-import MenuItem from '@mui/material/MenuItem';
-import FormControl from '@mui/material/FormControl';
-import ListItemText from '@mui/material/ListItemText';
-import Select, { SelectChangeEvent } from '@mui/material/Select';
-import Button from '@mui/material/Button';
-import Checkbox from '@mui/material/Checkbox';
 import { useGcalEvents } from "../../context/GCalEventsContext";
 import { formatGCalEvent } from "../utils/calendarUtils";
 import { CalendarFields } from "../utils/types";
@@ -21,16 +13,6 @@ import { API_BASE_URL } from "../utils/api/api";
 import Modal from "./Modal";
 
 
-const ITEM_HEIGHT = 48;
-const ITEM_PADDING_TOP = 8;
-const MenuProps = {
-  PaperProps: {
-    style: {
-      maxHeight: ITEM_HEIGHT * 4.5 + ITEM_PADDING_TOP,
-      width: 250,
-    },
-  },
-};
 
 export function ConnectGoogleButton() {
   // https://mui.com/material-ui/react-select/
@@ -43,6 +25,7 @@ export function ConnectGoogleButton() {
   const [cmuCalIds, setCMUCalIds] = useState<string[]>([]);
   const [showImportSummary, setShowImportSummary] = useState(false);
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
+  const [showCalendarSelector, setShowCalendarSelector] = useState(false);
 
   useEffect(() => {
     // Only runs on mount
@@ -88,11 +71,6 @@ export function ConnectGoogleButton() {
   }, []);
 
 
-  function handleSelectOpen() {
-    if (!loading && !isConnected) {
-      authorizeGoogle();
-    }
-  }
 
   useEffect(() => {
     console.log("Selected calendar IDs:", selectedCalendarIds);
@@ -119,31 +97,20 @@ export function ConnectGoogleButton() {
   };
 
 
-  const handleChange = (event: SelectChangeEvent<typeof selectedCalendarIds>) => {
-    const {
-      target: { value },
-    } = event;
-    setSelectedCalendarIds(
-      // On autofill we get a stringified value.
-      typeof value === 'string' ? value.split(',') : value,
-    );
-  };
-
-  const getGoogleConnectionStatus = () => 
-    loading ? "Checking..." : isConnected ? "Display GCal Events" : "Connect Google Calendar";
   
 
 
-  const authorizeGoogle = async () => {
-  // Add ?justConnected=true to the redirect URL so backend can append it after OAuth
-  const redirectUrl = window.location.origin + window.location.pathname + '?justConnected=true';
-  window.location.href = `${API_BASE_URL}/google/authorize?redirect=${encodeURIComponent(redirectUrl)}`;
+  const authorizeGoogle = () => {
+    // Add ?justConnected=true to the redirect URL so backend can append it after OAuth
+    const redirectUrl = window.location.origin + window.location.pathname + '?justConnected=true';
+    window.location.href = `${API_BASE_URL}/google/authorize?redirect=${encodeURIComponent(redirectUrl)}`;
   }
 
   const handleUnauthorizeGoogle = async () => {
     try {
       await unauthorizeGoogle();
       // Reset all state after unauthorizing
+      setShowCalendarSelector(false)
       setIsConnected(false);
       setAvailableCalendars([]);
       setSelectedCalendarIds([]);
@@ -244,69 +211,65 @@ export function ConnectGoogleButton() {
         </button>
       </Modal>
 
-      <div>
-        <FormControl sx={{ m: 1, minWidth: 120 }} size="small">
-          <Select
-            id="calendar-select"
-            multiple
-            value={selectedCalendarIds}
-            onOpen={handleSelectOpen}
-            onChange={handleChange}
-            input={<OutlinedInput />}
-            renderValue={(selected) => getGoogleConnectionStatus()}
-            // was selected.join(', ')
-            displayEmpty
-            MenuProps={MenuProps}
-            inputProps={{ 'aria-label': 'Without label' }}
-            sx={{
-              border: "1px solid #f1f1f1",
-              '&:focus': {
-                border: "1px solid #f1f1f1",
-              },
-              '& .MuiSelect-icon': {
-                display: "none", // hide dropdown arrow
-              },
-              '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                border: "1px solid #f1f1f1",
-              },
-              '&.Mui-focused': {
-                boxShadow: "none", // remove focus ring
-                border: "1px solid #f1f1f1"
-              }
-            }}
-          >
-            {availableCalendars.map((cal) => (
-              <MenuItem
-                key={cal.id}
-                value={cal.id}
-                sx={{
-                  fontSize: '0.85rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                }}
-              >
-                <Checkbox checked={selectedCalendarIds.includes(cal.id)} />
-                <ListItemText
-                  primary={
-                    <div className="overflow-x-scroll whitespace-nowrap text-sm">
-                      {cal.summary}
-                    </div>
-                  }
-                />
-              </MenuItem>
-            ))}
-
-          </Select>
-        </FormControl>
-      </div>
-      {isConnected && !loading && (
-            <button
-            onClick={handleUnauthorizeGoogle}
-            className='px-4 py-2 border rounded-md bg-gray-100 dark:bg-gray-600 hover:bg-gray-200 dark:hover:bg-gray-500'
+      {/* Calendar Selector Modal */}
+      <Modal show={showCalendarSelector} onClose={() => setShowCalendarSelector(false)}>
+        <h2 className="text-lg font-semibold mb-4">Select Calendars to Display</h2>
+        <div className="space-y-2 max-h-96 overflow-y-auto">
+          {availableCalendars.map((cal) => (
+            <label
+              key={cal.id}
+              className="flex items-center space-x-3 p-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded cursor-pointer"
             >
-            Disconnect Gcal
-            </button>
-        )}
+              <input
+                type="checkbox"
+                checked={selectedCalendarIds.includes(cal.id)}
+                onChange={(e) => {
+                  if (e.target.checked) {
+                    setSelectedCalendarIds([...selectedCalendarIds, cal.id]);
+                  } else {
+                    setSelectedCalendarIds(selectedCalendarIds.filter(id => id !== cal.id));
+                  }
+                }}
+                className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+              />
+              <div className="flex-1">
+                <span className="text-sm font-medium">{cal.summary}</span>
+                {cal.primary && <span className="ml-2 text-xs text-blue-600">(Primary)</span>}
+                {cal.accessRole === "owner" && !cal.primary && <span className="ml-2 text-xs text-green-600">(Owner)</span>}
+              </div>
+            </label>
+          ))}
+        </div>
+        <div className="flex justify-between mt-6">
+          <button
+            onClick={handleUnauthorizeGoogle}
+            className="px-4 py-2 text-sm text-red-600 hover:text-red-700 dark:text-red-400"
+          >
+            Disconnect Google
+          </button>
+          <button
+            onClick={() => setShowCalendarSelector(false)}
+            className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            Done
+          </button>
+        </div>
+      </Modal>
+
+      {/* Main Connect/Manage Button */}
+      <button
+        onClick={() => {
+          if (!loading && !isConnected) {
+            authorizeGoogle();
+          } else if (isConnected) {
+            setShowCalendarSelector(true);
+          }
+        }}
+        disabled={loading}
+        className='h-10 px-4 py-2 text-sm font-medium border border-gray-300 rounded-lg bg-white dark:bg-gray-700 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
+      >
+        {loading ? "Checking..." : isConnected ? "Manage Calendars" : "Connect Google Calendar"}
+      </button>
     </>
   );
 }

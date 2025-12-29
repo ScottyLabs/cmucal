@@ -128,11 +128,11 @@ export default function Home() {
   };
 
   if (loading || !isLoaded) {
-    return <div>Loading your schedule...</div>;
+    return <div className="p-4">Loading your schedule...</div>;
   }
 
   return (
-    <div className="flex h-[calc(99vh-80px)]">
+    <div className="flex h-[calc(100vh-65px)]">
     <TwoColumnLayout 
       leftContent={
         <ProfileSidebar 
