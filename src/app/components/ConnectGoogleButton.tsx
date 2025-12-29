@@ -168,13 +168,9 @@ export function ConnectGoogleButton() {
       {/* Welcome Modal for brand new users */}
       <Modal show={showWelcomeModal} onClose={() => setShowWelcomeModal(false)}>
         <div className="flex flex-col items-center text-center">
-          {/* Calendar Icon */}
+          {/* Logo */}
           <div className="mb-4">
-            <div className="w-16 h-16 bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 rounded-lg flex items-center justify-center shadow-lg">
-              <svg className="w-9 h-9 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
-            </div>
+            <img src="/newLogo.png" alt="CMUCal Logo" className="w-16 h-16 object-contain" />
           </div>
 
           {/* Title */}
@@ -311,7 +307,7 @@ export function ConnectGoogleButton() {
           </button>
           <button
             onClick={() => setShowCalendarSelector(false)}
-            className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            className="px-4 py-2 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600"
           >
             Done
           </button>
