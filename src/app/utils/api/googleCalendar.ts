@@ -4,9 +4,6 @@ import { AuthStatus, CalendarFields } from "../types";
 export const checkGoogleAuthStatus = () =>
   apiGet<AuthStatus>("/google/calendar/status");
 
-export const fetchCalendars = (clerkId: string) =>
-  apiGet<CalendarFields[]>("/google/calendar");
-
 export interface EnsureCalendarResponse {
   calendar_id: string;
   created: boolean; // true if newly created, false if already existed
