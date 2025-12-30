@@ -14,6 +14,7 @@ import { useEventState } from "../../context/EventStateContext";
 import Modal from "./Modal";
 import { GCalLinkPayloadType } from "../utils/types";
 import { readIcalLink } from "../utils/api/events";
+import Spinner from "./Spinner";
 
 interface ModalProps {
   show: boolean;
@@ -43,6 +44,8 @@ export default function ModalEventLink({
 
   const [selectManual, setSelectManual] = useState(false);
   const [optionError, setOptionError] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const { openUpload } = useEventState();
 
   const reset = () => {
@@ -67,7 +70,12 @@ export default function ModalEventLink({
     setOptionError(noOptionSelected);
     setGcalLinkError(!isRightFormat || !isPublic);
 
-    return !(isEventTypeInvalid || noOptionSelected || !isRightFormat || !isPublic);
+    return !(
+      isEventTypeInvalid ||
+      noOptionSelected ||
+      !isRightFormat ||
+      !isPublic
+    );
   };
 
   const handleSubmit = async () => {
@@ -97,17 +105,18 @@ export default function ModalEventLink({
         console.log("Submitting payload:", payload);
 
         try {
+          setIsSubmitting(true);
+
           const res = await readIcalLink(payload);
           console.log("Response from readIcalLink:", res);
-          // 201 from backend = success
+
           alert("Events created successfully!");
-          onClose(); // only close modal on success
+          onClose(); // close modal on success
         } catch (err: any) {
           console.error("readIcalLink failed:", err);
-          const message =
-            err?.response?.data?.message ??
-            "Something went wrong while submitting.";
-          alert("Unable to upload: " + message);
+          alert("Unable to upload: Something went wrong while submitting.");
+        } finally {
+          setIsSubmitting(false);
         }
       }
     } catch (err) {
@@ -117,6 +126,17 @@ export default function ModalEventLink({
   };
 
   if (!show || !selectedCategory || !user) return null;
+
+  if (isSubmitting) {
+    return (
+      <div className="flex flex-col items-center py-8">
+        <Spinner />
+        <p className="mt-2 text-sm text-gray-500">
+          Importing calendar events…
+        </p>
+      </div>
+    );}   
+
 
   return (
     <Modal show={show} onClose={onClose}>
@@ -167,7 +187,8 @@ export default function ModalEventLink({
         />
 
         <p className="mb-4 text-xs text-gray-400">
-          Need help? Go to Google Calendar &gt; Calendar Settings &gt; select "Make available to public" and  "See all event details" &gt; copy and
+          Need help? Go to Google Calendar &gt; Calendar Settings &gt; select
+          "Make available to public" and "See all event details" &gt; copy and
           paste the "Public address in iCal format".
         </p>
         {optionError && (
@@ -178,7 +199,8 @@ export default function ModalEventLink({
         )}
         {gcalLinkError && !optionError && (
           <p className="mb-4 text-sm text-red-500">
-            Please enter a valid Google Calendar iCal link and make sure it is public.
+            Please enter a valid Google Calendar iCal link and make sure it is
+            public.
           </p>
         )}
       </div>
@@ -212,8 +234,16 @@ export default function ModalEventLink({
           onClick={() => {
             handleSubmit();
           }}
+          disabled={isSubmitting}
         >
-          Continue
+          {isSubmitting ? (
+            <>
+              <Spinner />
+              Uploading…
+            </>
+          ) : (
+            "Continue"
+          )}
         </button>
       </div>
     </Modal>
