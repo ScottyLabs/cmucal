@@ -58,15 +58,15 @@ export default function Home() {
     };
   }, []);
 
-  const [visibleEvents, setVisibleEvents] = useState<Set<number>>(new Set());
+  const [visibleCategories, setVisibleCategories] = useState<Set<number>>(new Set());
 
-  const handleEventToggle = (eventId: number, isVisible: boolean) => {
-    setVisibleEvents(prev => {
+  const handleEventToggle = (categoryId: number, isVisible: boolean) => {
+    setVisibleCategories(prev => {
       const newSet = new Set(prev);
       if (isVisible) {
-        newSet.add(eventId);
+        newSet.add(categoryId);
       } else {
-        newSet.delete(eventId);
+        newSet.delete(categoryId);
       }
       return newSet;
     });
@@ -76,47 +76,53 @@ export default function Home() {
     const newCalendarEvents: EventInput[] = [];
     
     courses.forEach(course => {
-      Object.values(course.events).flat().forEach((event) => {
-        if (visibleEvents.has(event.id)) {
-          newCalendarEvents.push({
-            id: event.id.toString(),
-            title: event.title,
-            start: event.start_datetime,
-            end: event.end_datetime,
-            allDay: event.is_all_day,
-            backgroundColor: "#f87171", // Red color for courses
-            borderColor: "#f87171",
-            classNames: ["temp-course-event"],
-            extendedProps: { location: event.location, description: event.description, source_url: event.source_url,
-                           event_id: event.event_id || event.id, // event_id for occurrences, id for non-recurring}
-            }
+      course.categories.forEach(category => {
+        if (visibleCategories.has(category.id)) {
+          const categoryEvents = course.events[category.name] || [];
+          categoryEvents.forEach((event) => {
+            newCalendarEvents.push({
+              id: event.id.toString(),
+              title: event.title,
+              start: event.start_datetime,
+              end: event.end_datetime,
+              allDay: event.is_all_day,
+              backgroundColor: "#f87171", // Red color for courses
+              borderColor: "#f87171",
+              classNames: ["temp-course-event"],
+              extendedProps: { location: event.location, description: event.description, source_url: event.source_url,
+                             event_id: event.event_id || event.id, // event_id for occurrences, id for non-recurring}
+              }
+            });
           });
         }
       });
     });
 
     clubs.forEach(club => {
-      Object.values(club.events).flat().forEach((event) => {
-        if (visibleEvents.has(event.id)) {
-          newCalendarEvents.push({
-            id: event.id.toString(),
-            title: event.title,
-            start: event.start_datetime,
-            end: event.end_datetime,
-            allDay: event.is_all_day,
-            backgroundColor: "#4ade80", // Green color for clubs
-            borderColor: "#4ade80",
-            classNames: ["temp-club-event"],
-            extendedProps: { location: event.location, description: event.description, source_url: event.source_url,
-                           event_id: event.event_id || event.id, // event_id for occurrences, id for non-recurring}
-            }
+      club.categories.forEach(category => {
+        if (visibleCategories.has(category.id)) {
+          const categoryEvents = club.events[category.name] || [];
+          categoryEvents.forEach((event) => {
+            newCalendarEvents.push({
+              id: event.id.toString(),
+              title: event.title,
+              start: event.start_datetime,
+              end: event.end_datetime,
+              allDay: event.is_all_day,
+              backgroundColor: "#4ade80", // Green color for clubs
+              borderColor: "#4ade80",
+              classNames: ["temp-club-event"],
+              extendedProps: { location: event.location, description: event.description, source_url: event.source_url,
+                             event_id: event.event_id || event.id, // event_id for occurrences, id for non-recurring}
+              }
+            });
           });
         }
       });
     });
 
     setCalendarEvents(newCalendarEvents);
-  }, [courses, clubs, visibleEvents]);
+  }, [courses, clubs, visibleCategories]);
 
   const handleRemoveCategory = async (categoryId: number) => {
     try {
@@ -139,7 +145,7 @@ export default function Home() {
           courses={courses} 
           clubs={clubs} 
           onRemoveCategory={handleRemoveCategory}
-          onEventToggle={handleEventToggle}
+          onCategoryToggle={handleEventToggle}
           currentScheduleId={currentScheduleId ? Number(currentScheduleId) : undefined}
           onScheduleUpdate={() => fetchSchedule(currentScheduleId || undefined, true)}
         />
