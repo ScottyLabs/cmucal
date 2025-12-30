@@ -16,7 +16,7 @@ import Checkbox from '@mui/material/Checkbox';
 import { useGcalEvents } from "../../context/GCalEventsContext";
 import { formatGCalEvent } from "../utils/calendarUtils";
 import { CalendarFields } from "../utils/types";
-import { checkGoogleAuthStatus, fetchBulkEventsFromCalendars, unauthorizeGoogle } from "../utils/api/googleCalendar";
+import { checkGoogleAuthStatus, ensureCalendarExists, fetchBulkEventsFromCalendars, unauthorizeGoogle } from "../utils/api/googleCalendar";
 import { API_BASE_URL } from "../utils/api/api";
 import Modal from "./Modal";
 
@@ -32,7 +32,11 @@ const MenuProps = {
   },
 };
 
-export function ConnectGoogleButton() {
+type ConnectGoogleButtonProps = {
+  clerkId: string;
+};
+
+export function ConnectGoogleButton({clerkId}: ConnectGoogleButtonProps) {
   // https://mui.com/material-ui/react-select/
   const [isConnected, setIsConnected] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -76,7 +80,7 @@ export function ConnectGoogleButton() {
         }
 
         if (authorized && availableCalendars.length === 0) {
-          await fetchCalendars();
+          await fetchCalendars(clerkId);
         }
       } catch (err) {
         console.error("Error checking Google auth status:", err);
@@ -90,6 +94,7 @@ export function ConnectGoogleButton() {
 
   function handleSelectOpen() {
     if (!loading && !isConnected) {
+
       authorizeGoogle();
     }
   }
@@ -155,11 +160,13 @@ export function ConnectGoogleButton() {
     }
   }
 
-  const fetchCalendars = async () => {
+  const fetchCalendars = async (clerkId: string) => {
     // need to change this to using the api client later
     const res = await fetch(`${API_BASE_URL}/google/calendars`, {
+      method: "GET", // optional but recommended for clarity
       credentials: "include",
     });
+
   
     if (res.status === 401) {
       // should add a screen to give them more information and ask if 
@@ -167,6 +174,10 @@ export function ConnectGoogleButton() {
       window.location.href = `${API_BASE_URL}/google/authorize`;
       return;
     }
+
+    // Ensure CMUCal exists in user's Google Calendars. If not, create it.
+    console.log("Ensuring CMUCal exists...", clerkId);
+    await ensureCalendarExists(clerkId || "");
   
     const data : CalendarFields[] = await res.json();
   

@@ -282,7 +282,7 @@ export default function Navbar() {
 
           {/* Inside Right Section */}
           
-          <ConnectGoogleButton />
+          {user?.id && <ConnectGoogleButton clerkId={user.id} />}
           {/* Moon Icon for Dark Mode Toggle */}
           {/* Dark Mode Toggle Button */}
           {mounted && (
