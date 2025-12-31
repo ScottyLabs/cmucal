@@ -6,6 +6,8 @@ import TwoColumnLayout from "../components/TwoColumnLayout";
 import { getUserRole } from "../utils/api/users";
 import { useUser } from "@clerk/nextjs";
 import { fetchRole } from "../utils/authService";
+import ManagerSidebar from "../components/ManagerSidebar";
+import ManagerContent from "../components/ManagerDashboard";
 
 export default function ManagerPage() {
   const [userRole, setUserRole] = useState<string | null>(null);
@@ -26,8 +28,8 @@ export default function ManagerPage() {
   return (
     <div className="flex h-[calc(99vh-80px)]">
       <TwoColumnLayout
-        leftContent={<div className="p-4">Manager Sidebar Content</div>}
-        rightContent={<div className="p-4">Manager Main Content Area</div>}
+        leftContent={<ManagerSidebar />}
+        rightContent={<ManagerContent />}
       />
     </div>
   );

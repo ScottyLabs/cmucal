@@ -1,9 +1,13 @@
 import { apiGet, apiPost } from "./api";
-import { ClubOrganization, CourseOption } from "../types";
+import { ClubOrganization, CourseOption, Org } from "../types";
 
 
 export const getClubOrganizations = async (): Promise<ClubOrganization[]> => {
   return apiGet<ClubOrganization[]>("/organizations/get_club_orgs");
+};
+
+export const getAllOrganizations = async (): Promise<Org[]> => {
+  return apiGet<Org[]>("/organizations/get_all_orgs");
 };
 
 export const addOrgToSchedule = async (
