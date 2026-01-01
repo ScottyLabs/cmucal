@@ -176,7 +176,7 @@ export function ConnectGoogleButton({clerkId}: ConnectGoogleButtonProps) {
     }
 
     // Ensure CMUCal exists in user's Google Calendars. If not, create it.
-    console.log("Ensuring CMUCal exists...", clerkId);
+    // console.log("Ensuring CMUCal exists...", clerkId);
     await ensureCalendarExists(clerkId || "");
   
     const data : CalendarFields[] = await res.json();

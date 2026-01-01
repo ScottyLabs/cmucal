@@ -55,6 +55,15 @@ export interface Org {
   tags?: string[];
 }
 
+export interface AdminInOrg {
+  user_id: number;
+  andrew_id: string;
+  user_email: string;
+  org_id: number;
+  org_name: string;
+  role: string;
+  category_id?: number;
+}
 
 export interface ToggleItemProps {
   checked: boolean;

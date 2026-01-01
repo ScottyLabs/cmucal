@@ -13,7 +13,10 @@ export default function ManagerPage() {
   const [userRole, setUserRole] = useState<string | null>(null);
   const { user } = useUser();
 
+  const [selectedOrgId, setSelectedOrgId] = useState<number | null>(null);
+
   useEffect(() => {
+    if (!user?.id) return; 
     const fetchUserRole = async () => {
       const role = await fetchRole(user?.id);
       setUserRole(role);
@@ -25,11 +28,17 @@ export default function ManagerPage() {
 
   if (!userRole) return <p>Finding user role...</p>;
 
+  const handleOrgSelect = (orgId: number) => {
+    setSelectedOrgId(orgId);
+  };
+
+
+
   return (
-    <div className="flex h-[calc(99vh-80px)]">
+    <div className="flex-1">
       <TwoColumnLayout
-        leftContent={<ManagerSidebar />}
-        rightContent={<ManagerContent />}
+        leftContent={<ManagerSidebar handleOrgSelect={handleOrgSelect} selectedOrgId={selectedOrgId} />}
+        rightContent={<ManagerContent selectedOrgId={selectedOrgId} />}
       />
     </div>
   );

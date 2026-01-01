@@ -1,5 +1,5 @@
 import { apiGet, apiPost } from "./api";
-import { ClubOrganization, CourseOption, Org } from "../types";
+import { AdminInOrg, ClubOrganization, CourseOption, Org } from "../types";
 
 
 export const getClubOrganizations = async (): Promise<ClubOrganization[]> => {
@@ -40,3 +40,10 @@ export const removeOrgFromSchedule = async (scheduleId: number, orgId: number): 
 export const getCourseOrgs = async () : Promise<CourseOption[]> => {
   return apiGet<CourseOption[]>("/organizations/get_course_orgs");
 };
+
+export const getAdminsInOrg = async (clerkId: string, orgId: number): Promise<AdminInOrg[]> => {
+  return apiGet<AdminInOrg[]>("/organizations/get_admins_in_org", {
+    headers: { "Clerk-User-Id": clerkId },
+    params: { org_id: orgId },
+  });
+}

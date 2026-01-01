@@ -1,35 +1,47 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { FiSearch } from "react-icons/fi";
 import { getAllOrganizations } from "../utils/api/organizations";
 
-export default function ManagerSidebar() {
+interface Props {
+  handleOrgSelect: (orgId: number) => void;
+  selectedOrgId: number | null;
+}
+
+export default function ManagerSidebar({
+  handleOrgSelect,
+  selectedOrgId,
+}: Props) {
   const [search, setSearch] = useState("");
   const [loadingOrgs, setLoadingOrgs] = useState(false);
   const [organizations, setOrganizations] = useState<any[]>([]);
 
-//   const organizations = ["ScottyLabs", "Origami Club", "UXA"];
+  const filteredOrgs = useMemo(() => {
+    return organizations.filter((org) =>
+      org.name.toLowerCase().includes(search.toLowerCase()),
+    );
+  }, [organizations, search]);
 
   const fetchOrganizations = async () => {
-      setLoadingOrgs(true);
-      try {
-        const orgs = await getAllOrganizations();
-        console.log('Fetched organizations:', orgs);
-        setOrganizations(orgs);
-      } catch (error) {
-        console.error('Failed to fetch organizations:', error);
-      } finally {
-        setLoadingOrgs(false);
-      }
-    };
+    setLoadingOrgs(true);
+    try {
+      const orgs = await getAllOrganizations();
+      console.log("Fetched organizations:", orgs);
+      setOrganizations(orgs);
+    } catch (error) {
+      console.error("Failed to fetch organizations:", error);
+    } finally {
+      setLoadingOrgs(false);
+    }
+  };
 
-    useEffect(() => {
-      fetchOrganizations();
-    }, []);
+  useEffect(() => {
+    fetchOrganizations();
+  }, []);
 
   return (
-    <aside className="w-full max-w-sm bg-white">
+    <div className="h-[82vh]">
       {/* Header */}
       <div className="mb-8 flex items-center justify-between px-4 pt-4">
         <h2 className="text-sm font-semibold text-gray-700">
@@ -57,18 +69,22 @@ export default function ManagerSidebar() {
       </div>
 
       {/* Organization list */}
-      <div className="mt-4 space-y-3 px-4">
-        {organizations
-          .filter((org) => org.name.toLowerCase().includes(search.toLowerCase()))
-          .map((org) => (
-            <div
+      <div className="mt-4 flex-1 overflow-y-auto space-y-3 px-4 pb-4">
+        {filteredOrgs.map((org) => (
+            <button
               key={org.id}
-              className="cursor-pointer rounded-xl border border-gray-200 px-4 py-3 text-sm font-medium text-gray-800 hover:bg-gray-50"
+              type="button"
+              onClick={() => handleOrgSelect(org.id)}
+              className={`text-left cursor-pointer rounded-xl border px-4 py-3 text-sm font-medium w-full  ${
+                selectedOrgId === org.id
+                  ? "border-gray-500 bg-gray-100 text-gray-700"
+                  : "border-gray-200 text-gray-800 hover:bg-gray-50"
+              }`}
             >
               {org.name}
-            </div>
+            </button>
           ))}
       </div>
-    </aside>
+    </div>
   );
 }
