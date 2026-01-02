@@ -47,6 +47,23 @@ export interface Club {
   options: ClubOption[];
 }
 
+export interface Org {
+  id: number;
+  name: string;
+  description?: string;
+  type: "COURSE" | "CLUB" | "ACADEMIC";
+  tags?: string[];
+}
+
+export interface AdminInOrg {
+  user_id: number;
+  andrew_id: string;
+  user_email: string;
+  org_id: number;
+  org_name: string;
+  role: string;
+  category_id?: number;
+}
 
 export interface ToggleItemProps {
   checked: boolean;
