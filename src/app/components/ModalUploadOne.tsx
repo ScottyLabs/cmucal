@@ -77,7 +77,7 @@ export default function ModalUploadOne({ show, onClose }: ModalProps) {
         to request edit access to an organization's calendar.
       </p>
       <button
-        className="px-4 py-2 bg-blue-600 text-white rounded-md w-full"
+        className="px-4 py-2 bg-blue-500 text-white rounded-md w-full"
         disabled={!selectedOption}
         onClick={() => {
           if (selectedOption) {

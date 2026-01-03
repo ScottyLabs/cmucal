@@ -179,8 +179,8 @@ const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
   );
 
   return (
-    <div className="h-full dark:bg-gray-700 dark:text-gray-200 p-4 overflow-y-auto">
-      <div className="mb-6">
+    <div className="h-full dark:text-gray-200 overflow-y-auto">
+      <div className="my-6 px-8 ">
         <div className="flex justify-between items-center mb-2">
           <div className="flex items-center cursor-pointer" onClick={() => setIsCoursesOpen(!isCoursesOpen)}>
             <h3 className="text-gray-600 dark:text-gray-400 mr-2">My Courses</h3>
@@ -281,7 +281,7 @@ const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
                     <Accordion 
                       key={course.org_id} 
                       title={course.name}
-                      onRemove={() => course.categories.forEach(cat => onRemoveCategory(cat.id))}
+                      onRemove={() => handleRemoveCourse(course.org_id)}
                       color="red"
                     >
                       {course.categories.map(category => (
@@ -307,7 +307,10 @@ const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
         )}
       </div>
 
-      <div className="">
+      {/* horizontal seperator */}
+      <div className="w-full h-px bg-gray-300 dark:bg-gray-600"></div>
+
+      <div className="my-6 px-8 ">
         <div className="flex justify-between items-center mb-2">
           <div className="flex items-center cursor-pointer" onClick={() => setIsClubsOpen(!isClubsOpen)}>
             <h3 className="text-gray-600 dark:text-gray-400 mr-2">My Clubs</h3>
@@ -410,7 +413,7 @@ const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
                 <Accordion 
                   key={club.org_id} 
                   title={club.name}
-                  onRemove={() => club.categories.forEach(cat => onRemoveCategory(cat.id))}
+                  onRemove={() => handleRemoveClub(club.org_id)}
                   color="green"
                 >
                   {club.categories.map(category => (

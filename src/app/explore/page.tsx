@@ -18,7 +18,7 @@ export default function ExplorePage() {
   const { calendarEvents, setCalendarEvents } = useEventState();
   const { toggleAdded } = useEventState();
   return (
-    <div className="flex h-[calc(99vh-80px)]">
+    <div className="flex h-[calc(100vh-65px)]">
     <TwoColumnLayout
       leftContent={<SearchResultsSidebar events={events} setEvents={setEvents} toggleAdded={toggleAdded}/>}
       rightContent={<Calendar events={calendarEvents}/>}

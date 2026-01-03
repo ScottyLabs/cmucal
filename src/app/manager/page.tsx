@@ -35,7 +35,7 @@ export default function ManagerPage() {
 
 
   return (
-    <div className="flex-1">
+    <div className="flex h-[calc(100vh-65px)]">
       <TwoColumnLayout
         leftContent={<ManagerSidebar handleOrgSelect={handleOrgSelect} selectedOrgId={selectedOrgId} />}
         rightContent={<ManagerContent selectedOrgId={selectedOrgId} />}
