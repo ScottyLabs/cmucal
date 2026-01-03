@@ -298,7 +298,7 @@ export default function Navbar() {
         {/* Right Section: Upload, Connect Google, Dark Mode, User Button */}
         <div className="flex items-center gap-1">
           <div className="mx-2">
-            <ConnectGoogleButton />
+          {user?.id && <ConnectGoogleButton clerkId={user.id} />}
           </div>
           {/* Upload Button */}
           <button
