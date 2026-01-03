@@ -281,7 +281,7 @@ const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
                     <Accordion 
                       key={course.org_id} 
                       title={course.name}
-                      onRemove={() => course.categories.forEach(cat => onRemoveCategory(cat.id))}
+                      onRemove={() => handleRemoveCourse(course.org_id)}
                       color="red"
                     >
                       {course.categories.map(category => (
@@ -413,7 +413,7 @@ const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
                 <Accordion 
                   key={club.org_id} 
                   title={club.name}
-                  onRemove={() => club.categories.forEach(cat => onRemoveCategory(cat.id))}
+                  onRemove={() => handleRemoveClub(club.org_id)}
                   color="green"
                 >
                   {club.categories.map(category => (
