@@ -92,12 +92,21 @@ export default function Navbar() {
       });
 
       if (response.data.schedule_id) {
+        const newScheduleId = response.data.schedule_id;
+        const newScheduleName_trimmed = newScheduleName.trim();
+        
         // Update local state
-        const newSchedule = { id: response.data.schedule_id, name: newScheduleName.trim() };
+        const newSchedule = { id: newScheduleId, name: newScheduleName_trimmed };
         setSchedules(prev => [...prev, newSchedule]);
-        setSelectedSchedule(newScheduleName.trim());
+        setSelectedSchedule(newScheduleName_trimmed);
         setShowNewScheduleInput(false);
         setNewScheduleName('');
+
+        // Emit schedule change event
+        const changeEvent = new CustomEvent('scheduleChange', { 
+          detail: { scheduleId: newScheduleId } 
+        });
+        window.dispatchEvent(changeEvent);
 
         // Refetch schedules to ensure consistency
         const refreshResponse = await axios.get(`${API_BASE_URL}/users/schedules`, {
