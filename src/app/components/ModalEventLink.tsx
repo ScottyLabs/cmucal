@@ -60,7 +60,7 @@ export default function ModalEventLink({
     const isRightFormat =
       selectManual ||
       gcalLink.trim().startsWith("https://calendar.google.com/calendar/ical/");
-    const isPublic = gcalLink.trim().includes("public/basic.ics");
+    const isPublic = selectManual || gcalLink.trim().includes("public/basic.ics");
     const noOptionSelected = !gcalLink && !selectManual;
 
     setEventTypeError(isEventTypeInvalid);
