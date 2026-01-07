@@ -93,7 +93,7 @@ const Calendar: FC<Props> = ({ events }) => {
   };
 
   return (
-    <div className="-pt-4 p-4 bg-white rounded-lg shadow-md dark:bg-gray-700 dark:text-gray-300 h-full">
+    <div className="p-8 dark:text-gray-300 h-full">
       <FullCalendar
         plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
         initialView="timeGridWeek"

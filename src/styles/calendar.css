@@ -12,6 +12,81 @@
     color: white;
     padding-left: 4px;
   }
+
+  /* Base styles for all FullCalendar buttons */
+
+  /* theres gatta be a better way to do this */
+  .fc-button {
+    background-color: white !important;
+    border: 1px solid #D1D5DB !important;
+    border-radius: 8px !important;
+    height: 40px !important;
+    color: #374151 !important;
+    padding: 0 16px !important;
+  }
+
+  .fc-button:hover:not(:disabled):not(.fc-button-active) {
+    background-color: #f9fafb !important;
+  }
+
+  .fc-button:focus {
+    box-shadow: none !important;
+    border: 1px solid #D1D5DB !important;
+  }
+
+  .fc-button:disabled {
+    opacity: 0.5 !important;
+    cursor: not-allowed !important;
+    background-color: #f3f4f6 !important;
+  }
+
+  /* Active state for view buttons */
+  .fc-button-active {
+    background-color: #e5e7eb !important;
+    border-color: #D1D5DB !important;
+  }
+
+  .dark .fc-button {
+    background-color: #374151 !important;
+    border: 1px solid #4D5461 !important;
+    color: #e5e7eb !important;
+  }
+
+  .dark .fc-button:hover:not(:disabled):not(.fc-button-active) {
+    background-color: #4b5563 !important;
+  }
+
+  .dark .fc-button:disabled {
+    background-color: #1f2937 !important;
+    opacity: 0.5 !important;
+  }
+
+  .dark .fc-button-active {
+    background-color: #4b5563 !important;
+    border-color: #4D5461 !important;
+  }
+
+  /* Button group styling */
+  .fc-button-group {
+    gap: 0 !important;
+  }
+
+  .fc-button-group > .fc-button {
+    border-radius: 0 !important;
+    margin-left: -1px !important;
+  }
+
+  .fc-button-group > .fc-button:first-child {
+    border-top-left-radius: 8px !important;
+    border-bottom-left-radius: 8px !important;
+    margin-left: 0 !important;
+  }
+
+  .fc-button-group > .fc-button:last-child {
+    border-top-right-radius: 8px !important;
+    border-bottom-right-radius: 8px !important;
+  }
+
   
   .fc-event.gcal-event { /* full-day gcal events */
     background-color: #425575;

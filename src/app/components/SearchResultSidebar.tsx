@@ -140,7 +140,7 @@ export default function SearchResultsSidebar({ events, setEvents }: Props) {
   };
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col px-8 py-3">
       {/* Search Bar */}
       <div className="relative flex items-center w-full max-w-md my-3 shrink-0">
         <FiSearch className="absolute left-3 text-gray-500 dark:text-gray-300" size={16} />
