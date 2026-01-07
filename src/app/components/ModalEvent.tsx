@@ -1,13 +1,15 @@
 "use client";
 
 import Modal from './Modal';
-import { formatDate } from "~/app/utils/dateService";
+import { formatDate, dbRecurrenceToForm } from "~/app/utils/dateService";
 import { EventType } from '../types/EventType';
 import axios from "axios";
 import { useUser } from "@clerk/nextjs";
 import { useEffect, useState } from 'react';
 // import ModalEventUpdate from './ModalEventUpdate';
 import { useEventState } from "../../context/EventStateContext";
+import { RecurrenceInput } from '../utils/types';
+import dayjs from 'dayjs';
 import { fetchTagsForEvent } from "../utils/api/events";
 import { API_BASE_URL } from '../utils/api/api';
 
@@ -17,6 +19,8 @@ type ModalEventProps = {
     // toggleAdded?: (eventId:number) => void;
     // eventId?: number|null;
     savedEventDetails?: EventType;
+    event_id?: number;
+    googleFields?: EventType;
 }
 type Tag = { id?: string; name: string };
 
@@ -39,29 +43,40 @@ function SkeletonEventDetails() {
 }
 
 
-export default function ModalEvent({ show, onClose, savedEventDetails }: ModalEventProps) {    
+export default function ModalEvent({ show, onClose, event_id, googleFields }: ModalEventProps) {    
     const { user } = useUser();
-    const { selectedEvent, openUpdate, toggleAdded, savedEventIds } = useEventState();
-    const [eventDetails, setEventDetails] = useState<EventType | null>(savedEventDetails || null);
+    const { selectedEvent, openUpdate, toggleAdded, savedEventIds, modalData } = useEventState();
+    const [eventDetails, setEventDetails] = useState<EventType | null>(null);
     const [selectedTags, setSelectedTags] = useState<Tag[]>([]);
-    console.log("🤔🤔🤔savedEventDetails", savedEventDetails, eventDetails)
+    const [recurrenceRule, setRecurrenceRule] = useState<RecurrenceInput | null>(null);
+    const [repeat, setRepeat] = useState<string>("none");
+    // console.log("🤔🤔🤔savedEventDetails", eventDetails)
     const [loadingEvent, setLoadingEvent] = useState(false);
     const [loadingTags, setLoadingTags] = useState(false);
 
-    const eventId = selectedEvent;
+    const event_occurrence_id = selectedEvent;
+    const eventId = event_id
+    console.log("🍊🍊🍊", event_occurrence_id, eventId);
     
     const isAdmin = eventDetails?.user_is_admin;
 
     useEffect(() => {
+        if (googleFields) setEventDetails(googleFields);
+    }, [googleFields]);
+
+    // fetch event (occurrence) details
+    useEffect(() => {
+        console.log("saved event ids: ", savedEventIds);
         // get specific event with ID
-        if (!eventDetails) { 
+        if (!eventDetails && !googleFields) { 
+            console.log("🏃‍🏃‍🏃‍🏃‍🏃‍", googleFields, " || ", eventDetails);
             // TODO: i'd wanna have this so that it doesn't reload every time but we can think about this later
             // cuz currently the tags are not being passed through the modals and if i wanna keep them up to date i'll have to fetch
             // but i don't want it to load
             setLoadingEvent(true);
             const fetchEventDetails = async() => {
                 try {
-                    const eventRes = await axios.get(`${API_BASE_URL}/events/${eventId}`, {
+                    const eventRes = await axios.get(`${API_BASE_URL}/events/occurrence/${event_occurrence_id}`, {
                         params: {
                             user_id: user?.id,
                         },
@@ -70,36 +85,69 @@ export default function ModalEvent({ show, onClose, savedEventDetails }: ModalEv
                     setEventDetails(eventRes.data)
                 
                 } catch (err) {
-                    console.error("Failed to fetch event details for event: ", eventId, err);
+                    console.error("Failed to fetch event details for event: ", event_occurrence_id, err);
                 } finally {
                     setLoadingEvent(false);
                 }
             }
             fetchEventDetails();
+            console.log("[edit] fetched event details", show, eventDetails)
         }
-    }, [eventId, eventDetails])
+    }, [event_occurrence_id, eventDetails])
 
+    // fetch corresponding tag and recurrence
     useEffect(() => {
+        if (!googleFields) { 
         setLoadingTags(true);
-        const fetchTag = async() => {
+        const fetchTagAndRecurrence = async() => {
             try {
-                if (eventId) {
-                    const tags = await fetchTagsForEvent(eventId); // e.g. [{ id: "1", name: "computer science" }, ...]
-                    setSelectedTags(
-                        tags.map((tag: any) => ({
-                            id: tag.id,
-                            name: tag.name.toLowerCase(),
-                        }))
-                    );
+                // Fetching tags              
+                // const eventId = eventDetails.event_id;
+                const tagRes = await axios.get(`http://localhost:5001/api/events/${event_id}/tags`, {
+                    withCredentials: true,
+                });
+                const tags = tagRes.data; // e.g. [{ id: "1", name: "computer science" }, ...]
+                setSelectedTags(
+                    tags.map((tag: any) => ({
+                        id: tag.id,
+                        name: tag.name.toLowerCase(),
+                    }))
+                );
+
+                // Fetching recurrence rule
+                const emptyRecurrenceInput = {
+                    frequency: "WEEKLY",
+                    interval: 1,
+                    selectedDays: [1, 2, 3, 4, 5],
+                    ends: "never",
+                    endDate: null,
+                    occurrences: 13,
+                    startDatetime: eventDetails?.start_datetime ?? dayjs(),
+                    eventId: selectedEvent,
+                    nthWeek: null, 
                 }
+                const recurrenceRuleRes = await axios.get(`http://localhost:5001/api/events/${event_id}/recurrence`, {
+                    withCredentials: true,
+                });
+                const recRuleData = recurrenceRuleRes.data
+                setRecurrenceRule(dbRecurrenceToForm(recRuleData) || emptyRecurrenceInput);
+                // Derive repeat from recurrence info
+                const repeat = !recRuleData
+                    ? "none"
+                    : recRuleData.count || recRuleData.until
+                        ? "custom"
+                        : recRuleData.frequency.toLowerCase();
+                setRepeat(repeat);
+
             } catch (err) {
                 console.error("Failed to fetch event tags for event: ", eventId, err);
             } finally { 
                 setLoadingTags(false);
             }
         }
-        fetchTag();        
-    }, [eventId, eventDetails])
+        fetchTagAndRecurrence();
+        console.log("[edit] fetched tags and recurrence", show, selectedTags, recurrenceRule)  }    
+    }, [eventDetails])
 
     console.log("show edit modal!!", show, eventDetails)
 
@@ -111,7 +159,8 @@ export default function ModalEvent({ show, onClose, savedEventDetails }: ModalEv
                 { (loadingEvent || loadingTags)
                     ? <SkeletonEventDetails/>
                     : <>
-                {eventDetails && (
+                {eventDetails ?
+                (
                     <>
                 <p className="text-lg">{eventDetails.title}</p>
                 <p className="text-base text-gray-500">{formatDate(eventDetails.start_datetime)} - {formatDate(eventDetails.end_datetime)}</p>
@@ -122,17 +171,18 @@ export default function ModalEvent({ show, onClose, savedEventDetails }: ModalEv
                 <button 
                 className={`px-4 py-2 rounded-md ${ isAdmin ? "flex-1" : "w-full"} ${
                     // eventDetails.user_saved ? "bg-blue-300" : "bg-blue-500"
-                    savedEventIds.has(eventDetails.id) ? "bg-blue-300" : "bg-blue-500"
+                    savedEventIds.has(eventDetails.event_id??-1) ? "bg-blue-300" : "bg-blue-500"
                 } text-white`}
                     // onClick={() => {toggleAdded(eventDetails.id); onClose()}}>
                     onClick={() => {toggleAdded(eventDetails); onClose()}}>
-                   { savedEventIds.has(eventDetails.id) ? "Remove" : "Add" }
+                   { savedEventIds.has(eventDetails.event_id??-1) ? "Remove" : "Add" }
                 </button> 
                 <button className={`px-4 py-2 rounded-md ${ isAdmin ? "flex-1" : "hidden"}  bg-gray-200`}
-                    onClick={() => { openUpdate(eventDetails, selectedTags) }}>
+                    onClick={() => { openUpdate(eventDetails, selectedTags, recurrenceRule, repeat ) }}>
                     Edit Event
                 </button></div>
-                </>)}</>}
+                </>) : 
+                <>Invalid Event</>} </>}
             </div>
         </Modal>
     )

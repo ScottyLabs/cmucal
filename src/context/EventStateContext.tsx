@@ -1,10 +1,11 @@
 'use client';
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState, useRef } from "react";
 import axios from "axios";
 import { useUser } from "@clerk/nextjs";
 import { EventType } from "../app/types/EventType";
 import { EventInput } from "@fullcalendar/core";
 import { List } from "lucide-react";
+import { RecurrenceInput } from "~/app/utils/types";
 import { API_BASE_URL } from "~/app/utils/api/api";
 
 export type ModalView = "details" | "update" | "pre_upload" | "upload" | "uploadLink" | null;
@@ -22,11 +23,15 @@ type EventStateContextType = {
   toggleAdded: (event: EventType) => void;
   calendarEvents: EventInput[];
   setCalendarEvents: (events: EventInput[]) => void;
+  optimisticOverrides: Map<string, EventInput>;
 };
 
 export const EventStateContext = createContext<EventStateContextType | null>(null);
 
 export const EventStateProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const id = useRef(Math.random().toString(36).slice(2)).current;
+  console.log("EventStateProvider mounted:", id)
+
   const { user } = useUser();
   const [selectedEvent, setSelectedEvent] = useState<number|null>(null);
   const [modalView, setModalView] = useState<ModalView>(null);
@@ -34,6 +39,7 @@ export const EventStateProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   // const [savedEventIds, setSavedEventIds] = useState<number[]>([]);
   const [savedEventIds, setSavedEventIds] = useState(new Set<number>());
   const [calendarEvents, setCalendarEvents] = useState<EventInput[]>([]); 
+  const [optimisticOverrides, setOptimisticOverrides] = useState<Map<string, EventInput>>(new Map());
 
   // console.log("😮Fetching saved events for user:", user?.id);
 
@@ -60,90 +66,133 @@ export const EventStateProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
 
   // TODO: define toggleAdded (move it here)
-  const toggleAdded = async (event: EventType) => {
-      // const updatedEvents = [...events];
+  const toggleAdded = async (event_occurrence: EventType) => {
+      // const updatedEvents = [...event_occurrences];
       // const index = updatedEvents.findIndex((e) => e.id === thisId);
-      // const event = updatedEvents[index];
+      // const event_occurrence = updatedEvents[index];
 
-    if (!event) return;
-    const isCurrentlySaved = savedEventIds.has(event.id)
+    if (!event_occurrence) return;
+    const isCurrentlySaved = savedEventIds.has(event_occurrence.event_id??-1)
 
-    console.log("👀toggling event, ", savedEventIds.has(event.id), event);
+    console.log("👀toggling event_occurrence, ", savedEventIds.has(event_occurrence.event_id??-1), event_occurrence);
 
     // 1. Toggle locally - update attribute
-    // event.user_saved = !event.user_saved;
+    // event_occurrence.user_saved = !event_occurrence.user_saved;
     // setEvents(updatedEvents);
     if (isCurrentlySaved) {
-      // Remove the event from the saved IDs Set
+      // Remove the event_occurrence from the saved IDs Set
       setSavedEventIds(prevSet => {
         const newSet = new Set(prevSet);
-        newSet.delete(event.id)
+        newSet.delete(event_occurrence.event_id??-1)
         return newSet
       })
       console.log("(remove) updated saved ids: ", savedEventIds)
     } else {
-      // Add the event to saved Ids Set
-      setSavedEventIds(prevSet => new Set(prevSet).add(event.id))
+      // Add the event_occurrence to saved Ids Set
+      setSavedEventIds(prevSet => new Set(prevSet).add(event_occurrence.event_id??-1))
       console.log("(add) updated saved ids: ", savedEventIds)
     }
     
-    console.log("❓❓❓id in saved set? ", savedEventIds.has(event.id))
+    console.log("❓❓❓id in saved set? ", savedEventIds.has(event_occurrence.event_id??-1))
 
-    // 2. Update the User_saved_events table in database
+    // 2. Update calendar view
+    if (!isCurrentlySaved) {
+      setCalendarEvents(prev => [
+        ...prev,
+        {
+          id: event_occurrence.id.toString(),
+          title: event_occurrence.title,
+          start: event_occurrence.start_datetime,
+          end: event_occurrence.end_datetime,
+          allDay: event_occurrence.is_all_day,
+          extendedProps: {
+            event_id: event_occurrence.event_id,
+            location: event_occurrence.location,
+          },
+        }
+      ]);
+    } else {
+      setCalendarEvents(prev => prev.filter(e => e.id !== event_occurrence.id.toString()));
+    }
+
+    // hmm lemme try this one
+    setOptimisticOverrides(prev => {
+      const next = new Map(prev);
+      if (!isCurrentlySaved) {
+        next.set(event_occurrence.id.toString(), {
+          id: event_occurrence.id.toString(),
+          title: event_occurrence.title,
+          start: event_occurrence.start_datetime,
+          end: event_occurrence.end_datetime,
+          allDay: event_occurrence.is_all_day,
+          extendedProps: {
+            event_id: event_occurrence.event_id,
+            location: event_occurrence.location,
+          },
+        });
+      } else {
+        next.delete(event_occurrence.id.toString());
+      }
+      return next;
+    });
+
+    // 3. Update the User_saved_events table in database; and
+    // 4. Sync with GCal
     try {
       if (!isCurrentlySaved) {
-        // Add the event to current user's calendar
+        // Add to Google Calendar via backend
+        const res = await axios.post(`${API_BASE_URL}/google/calendar/events/add`, {
+          user_id: user?.id,
+          local_event_id: event_occurrence.id,
+          title: event_occurrence.title,
+          start: event_occurrence.start_datetime,
+          end: event_occurrence.end_datetime,
+        }, {
+          withCredentials: true,
+        });      
+
+        const googleEventId = res.data.googleEventId;
+
+        // Add the event to DB (user_saved_events)
         await axios.post(`${API_BASE_URL}/events/user_saved_events`, {
           user_id: user?.id,
-          event_id: event.id,
-          google_event_id: event.id, // [Q|TODO] is google event id needed in this table
+          // event_occurrence_id: event_occurrence.id,
+          event_id: event_occurrence.event_id,
+          google_event_id: googleEventId, // event_occurrence.id, // [Q|TODO] is google event id needed in this table
         }, {
           withCredentials: true,
         }); 
-      } else {
-        // Remove the event from current user's calendar
-        await axios.delete(`${API_BASE_URL}/events/user_saved_events/${event.id}`, {
-          data: {
-          user_id: user?.id,
-          google_event_id: event.id, // [Q|TODO] is google event id needed in this table
-        },
-          withCredentials: true,
-        });
-      }
-    } catch (err) {
-      console.error("Error saving / unsaving the event to user_saved_events, ", err);
-    }
 
-    // 3. Update calendar view
-    // fetchCalendarEvents();
-
-    // 4. Sync with Google Calendar
-    try {
-      if (!isCurrentlySaved) {
-        console.log("adding event to gcallll")
-        // Add to Google Calendar via backend
-        await axios.post(`${API_BASE_URL}/google/calendar/events/add`, {
-          user_id: user?.id,
-          local_event_id: event.id,
-          title: event.title,
-          start: event.start_datetime,
-          end: event.end_datetime,
-        }, {
-          withCredentials: true,
-        });        
       } else {
+
         // Remove from Google Calendar via backend
-        await axios.delete(`${API_BASE_URL}/google/calendar/events/${event.id}`, {
+        await axios.delete(`${API_BASE_URL}/google/calendar/events/${event_occurrence.id}`, {
           data: {
             user_id: user?.id,
           },
           withCredentials: true,
         });
-        
+
+        // Remove the event from DB (user_saved_event)
+        await axios.delete(`${API_BASE_URL}/events/user_saved_events/${event_occurrence.event_id}`, {
+          data: {
+          user_id: user?.id,
+          // google_event_id: event_occurrence.id, // [Q|TODO] is google event id needed in this table
+        },
+          withCredentials: true,
+        });
       }
     } catch (err) {
-      console.error("Error syncing with Google Calendar:", err);
+      console.error("Error syncing event save status to gcal or DB, ", err);
+      // Roll back UI state upon failed sync
+      setSavedEventIds(prevSet => {
+        const newSet = new Set(prevSet);
+        if (isCurrentlySaved) newSet.add(event_occurrence.id);
+        else newSet.delete(event_occurrence.id);
+        return newSet;
+      });
     }
+
   };
 
 
@@ -155,7 +204,8 @@ export const EventStateProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         modalData, setModalData, 
         savedEventIds, 
         toggleAdded,
-        calendarEvents, setCalendarEvents 
+        calendarEvents, setCalendarEvents,
+        optimisticOverrides, 
       }}>
         {children}
       </EventStateContext.Provider>
@@ -169,15 +219,19 @@ export const useEventState = () => {
     throw new Error("useEventState must be used within a EventStateContext.Provider");
   }
 
-  const openDetails = (event_id: number, savedEventDetails?: EventType) => {
-    context.setSelectedEvent(event_id);
-    context.setModalData({"savedEventDetails": savedEventDetails})
+  const openDetails = (event_occurrence_id: number, event_id?: number, savedEventDetails?: EventType, googleFields?: EventType) => {
+    context.setSelectedEvent(event_occurrence_id);
+    context.setModalData({
+      "savedEventDetails": savedEventDetails,
+      "event_id": event_id, 
+      "googleFields": googleFields})
     context.setModalView("details");
   };
-  const openUpdate = (eventInfo: EventType, selectedTags: Tag[]) => {
+  const openUpdate = (eventInfo: EventType, selectedTags: Tag[], recurrenceRule: RecurrenceInput|null, oldRepeat: string) => {
     // context.setSelectedEvent(event_id);// no need since always routed from the details modal
     
-    context.setModalData({"eventInfo": eventInfo, "selectedTags": selectedTags})
+    context.setModalData({"eventInfo": eventInfo, "selectedTags": selectedTags, 
+      "recurrenceRule": recurrenceRule, "oldRepeat": oldRepeat})
     console.log("opening update.... setting modal data", eventInfo)
     context.setModalView("update");
   };
@@ -201,6 +255,45 @@ export const useEventState = () => {
     context.setSelectedEvent(null);
     context.setModalView(null);
   };
+
+
+  // for gcal to local event conversion
+  const [occurrences, setOccurrences] = useState<string>("");
+  const gCalToOccurrenceCache = useRef<{ [googleEventId: string]: string }>({});
+
+  const getOccurrenceFromGCalEvent = async ({
+    googleEventId,
+    startTime,
+    userId
+  }: {
+    googleEventId: string;
+    startTime: string | null; // ISO string
+    userId: string;
+  }): Promise<string | null> => {
+
+    // 1️⃣ Return cached occurrenceID if available
+    if (gCalToOccurrenceCache.current[googleEventId]) {
+      return gCalToOccurrenceCache.current[googleEventId];
+    }
+    
+    try {
+      const res = await axios.get(`${API_BASE_URL}/events/gcal_occurrence`, {
+        params: {
+          user_id: userId, // clerk id, not DB user id
+          googleEventId: googleEventId,
+          startTime: startTime
+        },
+        withCredentials: true,
+      });
+      setOccurrences(res.data);
+      const occurrenceId = res.data.id;
+      gCalToOccurrenceCache.current[googleEventId] = occurrenceId; // cache googleEventId → occurrenceId
+      return occurrenceId;
+    } catch (err) {
+      console.error("Error fetching occurrence from GCal synced back event:", err);
+      return null;
+    }
+  }
   
 
 
@@ -217,6 +310,8 @@ export const useEventState = () => {
     openPreUpload,
     openUpload,
     openUploadLink,
-    closeModal
+    closeModal,
+    getOccurrenceFromGCalEvent,
+    optimisticOverrides: context.optimisticOverrides,
   }
 };
