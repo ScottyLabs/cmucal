@@ -109,18 +109,31 @@ export interface RecurrenceInput {
   nthWeek?: number | null;    // For monthly recurrence: 1-5 or -1 for last week
 }
 
+export interface DbRecurrence {
+  frequency: string;
+  interval: number;
+  start_datetime: string;
+  count: number | null;
+  until: string | null;
+  by_day: string[] | null;
+  by_month: number | null;
+  by_month_day: number | null;
+  event_id: number;
+}
+
 export interface RecurrenceOutput {
-  dbRecurrence: {
-    frequency: string;
-    interval: number;
-    count: number | null;
-    until: string | null;
-    event_id: number;
-    by_day: string[] | null;
-    by_month: number | null;
-    by_month_day: number | null;
-    start_datetime: string;
-  };
+  dbRecurrence: DbRecurrence;
+  //  {
+  //   frequency: string;
+  //   interval: number;
+  //   count: number | null;
+  //   until: string | null;
+  //   event_id: number;
+  //   by_day: string[] | null;
+  //   by_month: number | null;
+  //   by_month_day: number | null;
+  //   start_datetime: string;
+  // };
   summary: string;
 }
 
@@ -209,6 +222,7 @@ export interface GCalEvent {
     source_url?: string;
     allDay?: boolean;
     calendarId: string;
+    gcalEventId: string;
 };
   
 export interface FullCalendarEvent {
@@ -223,7 +237,8 @@ export interface FullCalendarEvent {
       location?: string,
       description?: string,
       source_url?: string,
-      event_id?: string
+      gcalEventId?: string,
+      cal_source?: string,
     }
 };
 
