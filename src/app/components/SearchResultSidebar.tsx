@@ -16,6 +16,7 @@ import React from 'react'
 import Select from 'react-select'
 import { fetchAllTags } from "../utils/api/events";
 import { API_BASE_URL, api } from "../utils/api/api";
+import { useExploreEvents } from "../explore/useExploreEvents";
 
 
 type Props = {
@@ -60,15 +61,24 @@ function SkeletonEventCard() {
 }
 
 export default function SearchResultsSidebar({ events, setEvents }: Props) {
-  const { user } = useUser();
+  const { user, isLoaded } = useUser();
+  // if (!isLoaded || !user) return;
   const [allTags, setAllTags] = useState<{id: number; name: string}[]>([]);
   const [selectedTags, setSelectedTags] = useState<OptionType[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const debouncedSearchTerm = useDebounce(searchTerm, 400); // 400ms debounce
-  const [filteredEvents, setFilteredEvents] = useState<EventType[]>([]);
+  // const [filteredEvents, setFilteredEvents] = useState<EventType[]>([]);
   const { openDetails, toggleAdded, savedEventIds } = useEventState();
-  const [loading, setLoading] = useState(false);
+  // const [loading, setLoading] = useState(false);
+
+  const { exploreResults, loading, loadingMore, hasMore, fetchMore } = useExploreEvents({
+    term: debouncedSearchTerm,
+    tags: selectedTags,
+    date: selectedDate,
+    userID: user?.id ?? null,
+  });
+
 
   // fetch tags and convert to Select options
   useEffect(() => {
@@ -88,35 +98,51 @@ export default function SearchResultsSidebar({ events, setEvents }: Props) {
     label: tag.name,
   }));
 
-  // fetch sidebar events conditioned on filters (search term, tags, start date)
-  useEffect(() => {
-    const selectedTagIds = selectedTags.map((tag) => tag.value).join(",");
-    const fetchEvents = async () => {
-      try {
-        setLoading(true);
-        const res = await api.get(`/events/`, {
-          headers: { "Clerk-User-Id": user?.id },
-          params: {
-            term: debouncedSearchTerm,
-            tags: selectedTagIds,
-            date: selectedDate,
-          },
-          withCredentials: true,      
-        })
-        setFilteredEvents(res.data);
-      } catch (err) {
-        console.error("Failed to filter events by condition", err)
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchEvents();
-  }, [debouncedSearchTerm, selectedTags, selectedDate])
+  // // fetch sidebar events conditioned on filters (search term, tags, start date)
+  // useEffect(() => {
+  //   const selectedTagIds = selectedTags.map((tag) => tag.value).join(",");
+  //   const fetchEvents = async () => {
+  //     try {
+  //       if (!user?.id) return;
+  //       setLoading(true);
+  //       // if (!user) return;
+  //       const res = await api.get(`/events/occurrences`, {
+  //         headers: { "Clerk-User-Id": user?.id },
+  //         params: {
+  //           term: debouncedSearchTerm,
+  //           tags: selectedTagIds,
+  //           date: selectedDate,
+  //         },
+  //         withCredentials: true,      
+  //       })
+  //       setFilteredEvents(res.data);
+  //     } catch (err) {
+  //       console.error("Failed to filter events by condition", err)
+  //     } finally {
+  //       setLoading(false);
+  //     }
+  //   };
+  //   fetchEvents();
+  // }, [debouncedSearchTerm, selectedTags, selectedDate])
   
+  const onScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const el = e.currentTarget; //e.target;
+    // console.log("scrollTop=", el.scrollTop, "; clientHeight=", el.clientHeight, "; scrollHeight=", el.scrollHeight,
+    //   "\nhasMore=", hasMore, "; loadingMore=", loadingMore
+    // )
+    if (
+      el.scrollTop + el.clientHeight >= el.scrollHeight - 50 &&
+      hasMore &&
+      !loadingMore
+    ) {
+      fetchMore();
+    }
+  };
+
   return (
-    <div>
+    <div className="h-full flex flex-col">
       {/* Search Bar */}
-      <div className="relative flex items-center w-full max-w-md my-3">
+      <div className="relative flex items-center w-full max-w-md my-3 shrink-0">
         <FiSearch className="absolute left-3 text-gray-500 dark:text-gray-300" size={16} />
         <input
           type="text"
@@ -128,7 +154,7 @@ export default function SearchResultsSidebar({ events, setEvents }: Props) {
       </div>
 
       {/* filter bar */}
-      <div className="flex flex-wrap items-center mb-4 text-gray-300">
+      <div className="flex flex-wrap items-center mb-4 text-gray-300 shrink-0">
       <Select className="rounded mb-3 min-w-[200px]"
         isMulti 
         options={tagOptions} 
@@ -144,43 +170,53 @@ export default function SearchResultsSidebar({ events, setEvents }: Props) {
         </div>
 
       {/* event cards */}
-      <div>
+      <div onScroll={onScroll} className="flex-1 min-h-0 overflow-y-auto">
+        {/* loading skeleton */}
         {loading
           ? Array.from({ length: 3 }).map((_, i) => <SkeletonEventCard key={i} />)
           : 
+        <>
+        {/* <div onScroll={onScroll} className="overflow-y-auto"> */}
+        <ul className="space-y-3">
+          {exploreResults.length === 0 && (
+            <li className="p-3 rounded text-gray-500 italic">
+              No matching events found.
+            </li>
+          )}
+          {exploreResults.map((event_occurrence) => (
+            <li key={event_occurrence.id} className="p-3 rounded border">
+              <p className="text-sm text-gray-400">EVENT</p>
+              <p className="text-lg">{event_occurrence.title}</p>
+              <p className="text-base text-gray-500">{formatDate(event_occurrence.start_datetime)} - {formatDate(event_occurrence.end_datetime)}</p>
+              <p className="text-base text-gray-500">{event_occurrence.location}</p>
+              <button
+                // onClick={() => toggleAdded(event_occurrence.id)}
+                onClick={() => toggleAdded(event_occurrence)}
+                className={`mt-2 px-3 py-1.5 rounded-lg ${
+                  savedEventIds.has(event_occurrence.event_id??-1) ? "bg-blue-300" : "bg-blue-500"//event_occurrence.user_saved
+                } text-white`}
+              >
+                {savedEventIds.has(event_occurrence.event_id??-1) ? "Remove" : "Add"}
+              </button>
+              <button
+                onClick={() => {openDetails(event_occurrence.id, event_occurrence.event_id); console.log("🎅HOHOHO🎅", event_occurrence.id, event_occurrence.event_id)}}
+                className="mt-2 mx-2 px-3 py-1.5 rounded-lg bg-gray-200">
+                Learn more
+              </button>
+            </li>
+          ))}
+        </ul>
         
-      
-      <ul className="space-y-3">
-        {filteredEvents.length === 0 && (
-          <li className="p-3 rounded text-gray-500 italic">
-            No matching events found.
-          </li>
-        )}
-        {filteredEvents.map((event) => (
-          <li key={event.id} className="p-3 rounded border">
-            <p className="text-sm text-gray-400">EVENT</p>
-            <p className="text-lg">{event.title}</p>
-            <p className="text-base text-gray-500">{formatDate(event.start_datetime)} - {formatDate(event.end_datetime)}</p>
-            <p className="text-base text-gray-500">{event.location}</p>
-            <button
-              // onClick={() => toggleAdded(event.id)}
-              onClick={() => toggleAdded(event)}
-              className={`mt-2 px-3 py-1.5 rounded-lg ${
-                savedEventIds.has(event.id) ? "bg-blue-300" : "bg-blue-500"//event.user_saved
-              } text-white`}
-            >
-              {savedEventIds.has(event.id) ? "Remove" : "Add"}
-            </button>
-            <button
-              onClick={() => openDetails(event.id)}
-              className="mt-2 mx-2 px-3 py-1.5 rounded-lg bg-gray-200">
-              Learn more
-            </button>
-          </li>
-        ))}
-      </ul>}
+        {/* spinner */}
+        {loadingMore && <div className="flex justify-center py-6">
+        <div
+          className="animate-spin rounded-full border-4 border-gray-300 border-t-gray-700"
+          style={{ width: 48, height: 48 }}
+        />
+        </div>}
+        </>
+      }
       </div>
-
       
     </div>
   );
