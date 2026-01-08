@@ -3,6 +3,7 @@ import { createContext, useContext, useEffect, useState, useCallback } from "rea
 import { useAuth } from "@clerk/nextjs";
 import { Course, Club } from "~/app/utils/types";
 import { getSchedule, removeCategoryFromSchedule } from "~/app/utils/api/schedules";
+import { getOrganizationData } from "~/app/utils/api/organizations";
 
 type UserContextType = {
   courses: Course[];
@@ -17,6 +18,8 @@ type UserContextType = {
   visibleCategories: Set<number>;
   setVisibleCategories: (categories: Set<number> | ((prev: Set<number>) => Set<number>)) => void;
   toggleCategoryVisibility: (categoryId: number) => void;
+  addOrganization: (orgId: number) => Promise<Course | Club | undefined>;
+  removeOrganization: (orgId: number) => void;
 };
 
 export const UserContext = createContext<UserContextType | null>(null);
@@ -86,6 +89,34 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
   }, [setVisibleCategories]);
 
+  // Optimistically add an organization to the schedule
+  const addOrganization = useCallback(async (orgId: number) => {
+    if (!userId) return undefined;
+    
+    try {
+      // Fetch only the new organization's data
+      const orgData = await getOrganizationData(userId, orgId);
+      
+      // Add to appropriate list based on type
+      if (orgData.type === "CLUB") {
+        setClubs(prev => [...prev, orgData]);
+      } else {
+        setCourses(prev => [...prev, orgData]);
+      }
+      
+      return orgData;
+    } catch (error) {
+      console.error("Failed to fetch organization data:", error);
+      throw error;
+    }
+  }, [userId]);
+
+  // Optimistically remove an organization from the schedule
+  const removeOrganization = useCallback((orgId: number) => {
+    setCourses(prev => prev.filter(c => c.org_id !== orgId));
+    setClubs(prev => prev.filter(c => c.org_id !== orgId));
+  }, []);
+
   return (
     <UserContext.Provider value={{
       courses,
@@ -100,6 +131,8 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       visibleCategories,
       setVisibleCategories,
       toggleCategoryVisibility,
+      addOrganization,
+      removeOrganization,
     }}>
       {children}
     </UserContext.Provider>
