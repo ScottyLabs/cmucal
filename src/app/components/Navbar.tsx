@@ -47,6 +47,7 @@ export default function Navbar() {
   const [showNewScheduleInput, setShowNewScheduleInput] = useState(false);
   const [newScheduleName, setNewScheduleName] = useState('');
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [isCreatingSchedule, setIsCreatingSchedule] = useState(false);
 
   const { user } = useClerkUser();  // clerk user object
   const router = useRouter();
@@ -82,10 +83,12 @@ export default function Navbar() {
       return;
     }
 
+    setIsCreatingSchedule(true);
     try {
       const id = await getUserIdFromClerkId(user.id);
       if (!id) {
         console.error("No user ID available");
+        setIsCreatingSchedule(false);
         return;
       }
 
@@ -109,16 +112,12 @@ export default function Navbar() {
 
         // Update context directly (triggers refetch)
         setCurrentScheduleId(newScheduleId);
-
-        // Refetch schedules to ensure consistency
-        const refreshResponse = await axios.get(`${API_BASE_URL}/users/schedules`, {
-          params: { user_id: id },
-          withCredentials: true,
-        });
-        setSchedules(refreshResponse.data);
       }
     } catch (error: any) {
       console.error("Failed to create schedule:", error.response?.data?.error || error.message);
+      alert("Failed to create schedule. Please try again.");
+    } finally {
+      setIsCreatingSchedule(false);
     }
   };
 
@@ -135,34 +134,41 @@ export default function Navbar() {
       return;
     }
 
+    // Store previous state for rollback
+    const previousSchedules = schedules;
+    const previousScheduleId = currentScheduleId;
+
+    // Optimistically update UI immediately
+    const remainingSchedules = schedules.filter(s => s.id !== scheduleId);
+    setSchedules(remainingSchedules);
+
+    // If we deleted the current schedule, switch to the first available one
+    if (currentScheduleId === scheduleId) {
+      if (remainingSchedules.length > 0 && remainingSchedules[0]) {
+        setCurrentScheduleId(remainingSchedules[0].id);
+      } else {
+        setCurrentScheduleId(-1);
+      }
+    }
+
+    // Delete in background
     try {
       const id = await getUserIdFromClerkId(user.id);
       if (!id) {
-        console.error("No user ID available");
-        return;
+        throw new Error("No user ID available");
       }
 
-      // Delete schedule
       await axios.delete(`${API_BASE_URL}/users/delete_schedule`, {
         data: { schedule_id: scheduleId },
         withCredentials: true,
       });
-
-      // Remove from local state
-      setSchedules(prev => prev.filter(s => s.id !== scheduleId));
-
-      // If we deleted the current schedule, switch to the first available one
-      if (currentScheduleId === scheduleId) {
-        const remainingSchedules = schedules.filter(s => s.id !== scheduleId);
-        if (remainingSchedules.length > 0 && remainingSchedules[0]) {
-          setCurrentScheduleId(remainingSchedules[0].id);
-        } else {
-          setCurrentScheduleId(null);
-        }
-      }
     } catch (error) {
       console.error("Failed to delete schedule:", error);
-      alert("Failed to delete schedule. Please try again.");
+      alert("Failed to delete schedule. Reverting changes.");
+      
+      // Revert on error
+      setSchedules(previousSchedules);
+      setCurrentScheduleId(previousScheduleId);
     }
   };
 
@@ -205,7 +211,8 @@ export default function Navbar() {
   }, [user?.id]);
 
   // Render navbar immediately, show skeleton for schedule selector
-  const isLoading = !userId || currentScheduleId === null;
+  // Only show loading if we haven't fetched userId yet, or if we have schedules but no currentScheduleId
+  const isLoading = !userId || (schedules.length > 0 && currentScheduleId === null);
 
   const handleAdminDashboardRedirect = () => {
     if (userRole === "manager") {
@@ -261,7 +268,7 @@ export default function Navbar() {
               // Show skeleton while loading
               <div className="h-10 px-4 py-2 border border-gray-300 rounded-lg bg-gray-100 dark:bg-gray-700 dark:border-gray-600 animate-pulse flex items-center gap-2">
                 <div className="w-4 h-4 bg-gray-300 dark:bg-gray-600 rounded"></div>
-                <div className="w-24 h-4 bg-gray-300 dark:bg-gray-600 rounded"></div>
+                <div className="w-16 h-4 bg-gray-300 dark:bg-gray-600 rounded"></div>
               </div>
             ) : schedules.length === 0 ? (
               // Show button when no schedules exist
@@ -352,21 +359,37 @@ export default function Navbar() {
                   type="text"
                   value={newScheduleName}
                   onChange={(e) => setNewScheduleName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !isCreatingSchedule) {
+                      void handleCreateSchedule();
+                    } else if (e.key === 'Escape') {
+                      setShowNewScheduleInput(false);
+                      setNewScheduleName('');
+                    }
+                  }}
                   placeholder="Schedule name"
                   className="w-full p-2 border rounded-md mb-2 dark:bg-gray-700 dark:text-white"
+                  autoFocus
+                  disabled={isCreatingSchedule}
                 />
                 <div className="flex justify-end gap-2">
                   <button
-                    onClick={() => setShowNewScheduleInput(false)}
+                    onClick={() => void handleCreateSchedule()}
+                    disabled={isCreatingSchedule}
+                    className="px-3 py-1 text-sm bg-blue-500 text-white rounded-md hover:bg-blue-600"
+
+                  >
+                    {isCreatingSchedule ? 'Creating...' : 'Create'}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowNewScheduleInput(false);
+                      setNewScheduleName('');
+                    }}
+                    disabled={isCreatingSchedule}
                     className="px-3 py-1 text-sm text-gray-600 hover:text-gray-800 dark:text-gray-300"
                   >
                     Cancel
-                  </button>
-                  <button
-                    onClick={handleCreateSchedule}
-                    className="px-3 py-1 text-sm bg-blue-500 text-white rounded-md hover:bg-blue-600"
-                  >
-                    Create
                   </button>
                 </div>
               </div>

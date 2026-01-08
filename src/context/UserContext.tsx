@@ -37,25 +37,59 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
   const [allEvents, setAllEvents] = useState<EventType[]>([]);
   const [eventsLoading, setEventsLoading] = useState(false);
+  
   // Store visibility per schedule: { scheduleId: Set<categoryId> }
   const [visibilityBySchedule, setVisibilityBySchedule] = useState<Map<string | number, Set<number>>>(new Map());
+  // Current active visibility set (updated after schedule loads)
+  const [visibleCategories, setVisibleCategoriesState] = useState<Set<number>>(new Set());
   
   // Track the previous schedule ID to detect actual changes
   const previousScheduleId = useRef<string | number | null>(null);
-  
-  const visibleCategories = visibilityBySchedule.get(currentScheduleId ?? 'default') ?? new Set<number>();
 
   const fetchSchedule = useCallback(async (scheduleId?: string | number, silent = false) => {
     if (!isLoaded || !userId) return;
     if (!silent) setLoading(true);
+
+    // if scheduleId is -1, clear the schedule
+    if (scheduleId === -1) {
+      setCourses([]);
+      setClubs([]);
+      setVisibleCategoriesState(new Set());
+      if (!silent) setLoading(false);
+      return;
+    }
+
     try {
       const data = await getSchedule(userId, scheduleId);
       if (data) {
         setCourses(data.courses || []);
         setClubs(data.clubs || []);
+        
         // Set the schedule ID if it was returned and not already set
         if (data.schedule_id && !currentScheduleId) {
           setCurrentScheduleId(data.schedule_id);
+        }
+        
+        // After schedule loads, update visible categories
+        const scheduleKey = data.schedule_id ?? currentScheduleId ?? 'default';
+        const savedVisibilities = visibilityBySchedule.get(scheduleKey);
+        
+        if (savedVisibilities) {
+          // Use saved visibilities if they exist
+          setVisibleCategoriesState(savedVisibilities);
+        } else {
+          // Default: all categories visible
+          const allCategoryIds = new Set<number>();
+          [...(data.courses || []), ...(data.clubs || [])].forEach(org => {
+            org.categories.forEach(cat => allCategoryIds.add(cat.id));
+          });
+          setVisibleCategoriesState(allCategoryIds);
+          // Save default to map
+          setVisibilityBySchedule(prev => {
+            const newMap = new Map(prev);
+            newMap.set(scheduleKey, allCategoryIds);
+            return newMap;
+          });
         }
       }
     } catch (error) {
@@ -63,7 +97,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } finally {
       if (!silent) setLoading(false);
     }
-  }, [isLoaded, userId, currentScheduleId]);
+  }, [isLoaded, userId, currentScheduleId, visibilityBySchedule]);
 
   // Fetch schedule on mount and when currentScheduleId changes
   useEffect(() => {
@@ -115,12 +149,19 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const setVisibleCategories = useCallback((updater: Set<number> | ((prev: Set<number>) => Set<number>)) => {
     const scheduleKey = currentScheduleId ?? 'default';
-    setVisibilityBySchedule(prev => {
-      const newMap = new Map(prev);
-      const currentSet = newMap.get(scheduleKey) ?? new Set<number>();
-      const newSet = typeof updater === 'function' ? updater(currentSet) : updater;
-      newMap.set(scheduleKey, newSet);
-      return newMap;
+    
+    // Update current visibility state
+    setVisibleCategoriesState(prev => {
+      const newSet = typeof updater === 'function' ? updater(prev) : updater;
+      
+      // Save to schedule map
+      setVisibilityBySchedule(prevMap => {
+        const newMap = new Map(prevMap);
+        newMap.set(scheduleKey, newSet);
+        return newMap;
+      });
+      
+      return newSet;
     });
   }, [currentScheduleId]);
 
