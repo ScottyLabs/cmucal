@@ -12,8 +12,9 @@ import { FiUpload } from "react-icons/fi";
 import { useRouter } from "next/navigation";
 
 import { useEventState } from "../../context/EventStateContext";
-import { useUser } from "@clerk/nextjs";
+import { useUser as useClerkUser } from "@clerk/nextjs";
 import { UserButton } from "@clerk/nextjs";
+import { useUser } from "~/context/UserContext";
 
 import { ConnectGoogleButton } from "./ConnectGoogleButton";
 
@@ -37,6 +38,7 @@ export default function Navbar() {
   // const [showUploadModalOne, setShowUploadModalOne] = useState(false);
   // const [showUploadModalTwo, setShowUploadModalTwo] = useState(false);  
   const { openPreUpload } = useEventState();
+  const { setCurrentScheduleId } = useUser();
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [userId, setUserId] = useState<string | number>("n/a");
   const pathname = usePathname();
@@ -47,7 +49,7 @@ export default function Navbar() {
   const [newScheduleName, setNewScheduleName] = useState('');
   const [userRole, setUserRole] = useState<string | null>(null);
 
-  const { user } = useUser();  // clerk user object
+  const { user } = useClerkUser();  // clerk user object
   const router = useRouter();
 
 
@@ -65,9 +67,8 @@ export default function Navbar() {
   const handleScheduleChange = (event: SelectChangeEvent) => {
     const schedule = schedules.find(s => s.name === event.target.value) || null;
     setSelectedSchedule(event.target.value);
-    // Emit schedule change event
-    const changeEvent = new CustomEvent('scheduleChange', { detail: { scheduleId: schedule?.id ?? null } });
-    window.dispatchEvent(changeEvent);
+    // Update context directly
+    setCurrentScheduleId(schedule?.id ?? null);
   };
 
   const handleCreateSchedule = async () => {
@@ -92,7 +93,7 @@ export default function Navbar() {
       });
 
       if (response.data.schedule_id) {
-        const newScheduleId = response.data.schedule_id;
+        const newScheduleId: number = response.data.schedule_id;
         const newScheduleName_trimmed = newScheduleName.trim();
         
         // Update local state
@@ -102,11 +103,8 @@ export default function Navbar() {
         setShowNewScheduleInput(false);
         setNewScheduleName('');
 
-        // Emit schedule change event
-        const changeEvent = new CustomEvent('scheduleChange', { 
-          detail: { scheduleId: newScheduleId } 
-        });
-        window.dispatchEvent(changeEvent);
+        // Update context directly
+        setCurrentScheduleId(newScheduleId);
 
         // Refetch schedules to ensure consistency
         const refreshResponse = await axios.get(`${API_BASE_URL}/users/schedules`, {
@@ -136,18 +134,16 @@ export default function Navbar() {
         if (id) {
           setUserId(id);
           // Fetch user's schedules
-          const response = await axios.get(`${API_BASE_URL}/users/schedules`, {
+          const response = await axios.get<Array<{ id: number; name: string }>>(`${API_BASE_URL}/users/schedules`, {
             params: { user_id: id },
             withCredentials: true,
           });
           setSchedules(response.data);
-          if (response.data.length > 0) {
-            setSelectedSchedule(response.data[0].name);
-            // Emit initial schedule change event
-            const changeEvent = new CustomEvent('scheduleChange', { 
-              detail: { scheduleId: response.data[0].id } 
-            });
-            window.dispatchEvent(changeEvent);
+          if (response.data.length > 0 && response.data[0]) {
+            const firstSchedule = response.data[0];
+            setSelectedSchedule(firstSchedule.name);
+            // Update context directly
+            setCurrentScheduleId(firstSchedule.id);
           }
           const role = await fetchRole(user?.id);
           setUserRole(role);
@@ -159,8 +155,8 @@ export default function Navbar() {
       }
     };
 
-    fetchUserData();
-  }, [user?.id]);
+    void fetchUserData();
+  }, [user?.id, setCurrentScheduleId]);
 
   if (!userId) {
     return <div>Loading...</div>;

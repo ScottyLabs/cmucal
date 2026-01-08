@@ -1,64 +1,28 @@
 "use client"
 
-import { useState, useEffect, useCallback, useContext } from "react";
-import { useAuth } from "@clerk/nextjs";
+import { useEffect } from "react";
 import TwoColumnLayout from "@components/TwoColumnLayout";
 import { EventInput } from "@fullcalendar/core";
 import ProfileSidebar from "./components/ProfileSidebar";
-import { Course, Club } from "./utils/types";
-import { getSchedule, removeCategoryFromSchedule } from "./utils/api/schedules";
 import Calendar from "./components/Calendar";
 import { useEventState } from "~/context/EventStateContext";
+import { useUser } from "~/context/UserContext";
 
 /**
  * Profile page with personalized calendar view
  */
 export default function Home() {
-
-  const { getToken, isLoaded, userId } = useAuth();
-
-
-  const [courses, setCourses] = useState<Course[]>([]);
-  const [clubs, setClubs] = useState<Club[]>([]);
-  // const [calendarEvents, setCalendarEvents] = useState<EventInput[]>([]);
   const { calendarEvents, setCalendarEvents } = useEventState();
-  const [loading, setLoading] = useState(true);
-
-  const [currentScheduleId, setCurrentScheduleId] = useState<string | number | null>(null);
-
-  const fetchSchedule = useCallback(async (scheduleId?: string | number, silent = false) => {
-    if (!isLoaded || !userId) return;
-    if (!silent) setLoading(true);
-    try {
-      const data = await getSchedule(userId, scheduleId);
-      if (data) {
-        setCourses(data.courses || []);
-        setClubs(data.clubs || []);
-      }
-    } catch (error) {
-      console.error("Failed to fetch schedule", error);
-    } finally {
-      if (!silent) setLoading(false);
-    }
-  }, [isLoaded, userId]);
-
-  useEffect(() => {
-    fetchSchedule(currentScheduleId || undefined);
-  }, [fetchSchedule, currentScheduleId]);
-
-  // Listen for schedule changes from Navbar
-  useEffect(() => {
-    const handleScheduleChange = (event: CustomEvent<{ scheduleId: string | number }>) => {
-      setCurrentScheduleId(event.detail.scheduleId);
-    };
-
-    window.addEventListener('scheduleChange', handleScheduleChange as EventListener);
-    return () => {
-      window.removeEventListener('scheduleChange', handleScheduleChange as EventListener);
-    };
-  }, []);
-
-  const [visibleCategories, setVisibleCategories] = useState<Set<number>>(new Set());
+  const { 
+    courses, 
+    clubs, 
+    loading, 
+    currentScheduleId, 
+    handleRemoveCategory, 
+    fetchSchedule,
+    visibleCategories,
+    setVisibleCategories 
+  } = useUser();
 
   const handleEventToggle = (categoryId: number, isVisible: boolean) => {
     setVisibleCategories(prev => {
@@ -122,18 +86,9 @@ export default function Home() {
     });
 
     setCalendarEvents(newCalendarEvents);
-  }, [courses, clubs, visibleCategories]);
+  }, [courses, clubs, visibleCategories, setCalendarEvents]);
 
-  const handleRemoveCategory = async (categoryId: number) => {
-    try {
-      await removeCategoryFromSchedule(categoryId, userId);
-      fetchSchedule();
-    } catch (error) {
-      console.error("Failed to remove category", error);
-    }
-  };
-
-  if (loading || !isLoaded) {
+  if (loading) {
     return <div className="p-4">Loading your schedule...</div>;
   }
 
