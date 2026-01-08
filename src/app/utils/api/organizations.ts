@@ -1,5 +1,5 @@
 import { apiGet, apiPost } from "./api";
-import { AdminInOrg, ClubOrganization, CourseOption, Org } from "../types";
+import { AdminInOrg, ClubOrganization, CourseOption, Org, Course, Club } from "../types";
 
 
 export const getClubOrganizations = async (): Promise<ClubOrganization[]> => {
@@ -46,4 +46,14 @@ export const getAdminsInOrg = async (clerkId: string, orgId: number): Promise<Ad
     headers: { "Clerk-User-Id": clerkId },
     params: { org_id: orgId },
   });
-}
+};
+
+// Fetch a single organization's data with categories and events
+export const getOrganizationData = async (
+  userId: string,
+  orgId: number
+): Promise<Course | Club> => {
+  return apiGet<Course | Club>(`/organizations/org/${orgId}`, {
+    headers: { "Clerk-User-Id": userId },
+  });
+};
