@@ -4,12 +4,16 @@ import { useAuth } from "@clerk/nextjs";
 import { Course, Club } from "~/app/utils/types";
 import { getSchedule, removeCategoryFromSchedule } from "~/app/utils/api/schedules";
 import { getOrganizationData } from "~/app/utils/api/organizations";
+import { EventType } from "~/app/types/EventType";
+import { api } from "~/app/utils/api/api";
 
 type UserContextType = {
   courses: Course[];
   clubs: Club[];
   currentScheduleId: string | number | null;
   loading: boolean;
+  allEvents: EventType[];
+  eventsLoading: boolean;
   setCourses: (courses: Course[]) => void;
   setClubs: (clubs: Club[]) => void;
   setCurrentScheduleId: (id: string | number | null) => void;
@@ -20,6 +24,7 @@ type UserContextType = {
   toggleCategoryVisibility: (categoryId: number) => void;
   addOrganization: (orgId: number) => Promise<Course | Club | undefined>;
   removeOrganization: (orgId: number) => void;
+  refetchEvents: () => Promise<void>;
 };
 
 export const UserContext = createContext<UserContextType | null>(null);
@@ -31,6 +36,8 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [clubs, setClubs] = useState<Club[]>([]);
   const [currentScheduleId, setCurrentScheduleId] = useState<string | number | null>(null);
   const [loading, setLoading] = useState(true);
+  const [allEvents, setAllEvents] = useState<EventType[]>([]);
+  const [eventsLoading, setEventsLoading] = useState(false);
   // Store visibility per schedule: { scheduleId: Set<categoryId> }
   const [visibilityBySchedule, setVisibilityBySchedule] = useState<Map<string | number, Set<number>>>(new Map());
   
@@ -56,6 +63,34 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     fetchSchedule(currentScheduleId || undefined);
   }, [fetchSchedule, currentScheduleId]);
+
+  // Fetch all events on mount
+  const fetchEvents = useCallback(async () => {
+    if (!isLoaded || !userId) return;
+    setEventsLoading(true);
+    try {
+      const res = await api.get(`/events/`, {
+        headers: { "Clerk-User-Id": userId },
+        params: {
+          term: '',
+          tags: '',
+          date: '',
+        },
+        withCredentials: true,
+      });
+      setAllEvents(res.data);
+    } catch (error) {
+      console.error("Failed to fetch events", error);
+    } finally {
+      setEventsLoading(false);
+    }
+  }, [isLoaded, userId]);
+
+  useEffect(() => {
+    if (isLoaded && userId) {
+      void fetchEvents();
+    }
+  }, [isLoaded, userId, fetchEvents]);
 
   const handleRemoveCategory = async (categoryId: number) => {
     try {
@@ -123,6 +158,8 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       clubs,
       currentScheduleId,
       loading,
+      allEvents,
+      eventsLoading,
       setCourses,
       setClubs,
       setCurrentScheduleId,
@@ -133,6 +170,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       toggleCategoryVisibility,
       addOrganization,
       removeOrganization,
+      refetchEvents: fetchEvents,
     }}>
       {children}
     </UserContext.Provider>

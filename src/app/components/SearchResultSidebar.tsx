@@ -2,7 +2,8 @@
 import { formatDate } from "~/app/utils/dateService";
 import { useState, useEffect, useMemo } from "react";
 import axios from "axios";
-import { useUser } from "@clerk/nextjs";
+import { useUser as useClerkUser } from "@clerk/nextjs";
+import { useUser } from "~/context/UserContext";
 import { FiSearch } from "react-icons/fi";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
@@ -56,55 +57,48 @@ function SkeletonEventCard() {
 }
 
 export default function SearchResultsSidebar({ events, setEvents }: Props) {
-  const { user } = useUser();
+  const { user } = useClerkUser();
+  const { allEvents: globalEvents, eventsLoading: globalEventsLoading, refetchEvents } = useUser();
   const [allTags, setAllTags] = useState<{id: number; name: string}[]>([]);
   const [selectedTags, setSelectedTags] = useState<OptionType[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [allEvents, setAllEvents] = useState<EventType[]>([]);
+  const [filteredByTags, setFilteredByTags] = useState<EventType[]>(globalEvents);
   const { openDetails, toggleAdded, savedEventIds } = useEventState();
-  const [loading, setLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const EVENTS_PER_PAGE = 20;
 
-  // Fetch tags and initial events on mount
+  // Update filtered events when global events change
   useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
+    if (selectedTags.length === 0) {
+      setFilteredByTags(globalEvents);
+    }
+  }, [globalEvents, selectedTags.length]);
+
+  // Fetch tags on mount
+  useEffect(() => {
+    const fetchTags = async () => {
       try {
-        const [tagsData, eventsData] = await Promise.all([
-          fetchAllTags(),
-          api.get(`/events/`, {
-            headers: { "Clerk-User-Id": user?.id },
-            params: {
-              term: '',
-              tags: '',
-              date: '',
-            },
-            withCredentials: true,
-          })
-        ]);
+        const tagsData = await fetchAllTags();
         setAllTags(tagsData);
-        setAllEvents(eventsData.data);
       } catch (err) {
-        console.error("Failed to fetch data", err);
-      } finally {
-        setLoading(false);
+        console.error("Failed to fetch tags", err);
       }
     };
     if (user?.id) {
-      void fetchData();
+      void fetchTags();
     }
   }, [user?.id]);
 
   // Refetch events when tags change
   useEffect(() => {
-    // Skip on initial mount (already fetched above)
-    if (selectedTags.length === 0) return;
+    if (selectedTags.length === 0) {
+      setFilteredByTags(globalEvents);
+      return;
+    }
     
     const selectedTagIds = selectedTags.map((tag) => tag.value).join(",");
     const fetchEvents = async () => {
-      setLoading(true);
       try {
         const res = await api.get(`/events/`, {
           headers: { "Clerk-User-Id": user?.id },
@@ -115,17 +109,15 @@ export default function SearchResultsSidebar({ events, setEvents }: Props) {
           },
           withCredentials: true,
         });
-        setAllEvents(res.data);
+        setFilteredByTags(res.data);
       } catch (err) {
         console.error("Failed to fetch events", err);
-      } finally {
-        setLoading(false);
       }
     };
     if (user?.id) {
       void fetchEvents();
     }
-  }, [selectedTags, user?.id]);
+  }, [selectedTags, user?.id, globalEvents]);
   const tagOptions = allTags.map(tag => ({
     value: tag.id,
     label: tag.name,
@@ -133,7 +125,7 @@ export default function SearchResultsSidebar({ events, setEvents }: Props) {
 
   // Client-side filtering for search term and date (optimized)
   const filteredEvents = useMemo(() => {
-    let filtered = allEvents;
+    let filtered = filteredByTags;
     
     // Filter by date first (fastest check)
     if (selectedDate) {
@@ -155,7 +147,7 @@ export default function SearchResultsSidebar({ events, setEvents }: Props) {
     }
     
     return filtered;
-  }, [allEvents, searchTerm, selectedDate]);
+  }, [filteredByTags, searchTerm, selectedDate]);
 
   // Paginate filtered events
   const paginatedEvents = useMemo(() => {
@@ -239,7 +231,7 @@ export default function SearchResultsSidebar({ events, setEvents }: Props) {
 
       {/* event cards */}
       <div>
-        {loading
+        {globalEventsLoading
           ? Array.from({ length: 3 }).map((_, i) => <SkeletonEventCard key={i} />)
           : 
         
