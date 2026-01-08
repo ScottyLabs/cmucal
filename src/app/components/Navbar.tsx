@@ -38,13 +38,12 @@ export default function Navbar() {
   // const [showUploadModalOne, setShowUploadModalOne] = useState(false);
   // const [showUploadModalTwo, setShowUploadModalTwo] = useState(false);  
   const { openPreUpload } = useEventState();
-  const { setCurrentScheduleId } = useUser();
+  const { currentScheduleId, setCurrentScheduleId } = useUser();
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [userId, setUserId] = useState<string | number>("n/a");
   const pathname = usePathname();
 
   const [schedules, setSchedules] = useState<Array<{id: number, name: string}>>([]);
-  const [selectedSchedule, setSelectedSchedule] = useState<string>('');
   const [showNewScheduleInput, setShowNewScheduleInput] = useState(false);
   const [newScheduleName, setNewScheduleName] = useState('');
   const [userRole, setUserRole] = useState<string | null>(null);
@@ -72,9 +71,8 @@ export default function Navbar() {
     }
     
     const scheduleId = Number(event.target.value);
-    const schedule = schedules.find(s => s.id === scheduleId) || null;
-    setSelectedSchedule(String(scheduleId));
-    // Update context directly
+    const schedule = schedules.find(s => s.id === scheduleId) ?? null;
+    // Update context directly (this will trigger refetch)
     setCurrentScheduleId(schedule?.id ?? null);
   };
 
@@ -106,11 +104,10 @@ export default function Navbar() {
         // Update local state
         const newSchedule = { id: newScheduleId, name: newScheduleName_trimmed };
         setSchedules(prev => [...prev, newSchedule]);
-        setSelectedSchedule(String(newScheduleId));
         setShowNewScheduleInput(false);
         setNewScheduleName('');
 
-        // Update context directly
+        // Update context directly (triggers refetch)
         setCurrentScheduleId(newScheduleId);
 
         // Refetch schedules to ensure consistency
@@ -155,13 +152,11 @@ export default function Navbar() {
       setSchedules(prev => prev.filter(s => s.id !== scheduleId));
 
       // If we deleted the current schedule, switch to the first available one
-      if (Number(selectedSchedule) === scheduleId) {
+      if (currentScheduleId === scheduleId) {
         const remainingSchedules = schedules.filter(s => s.id !== scheduleId);
         if (remainingSchedules.length > 0 && remainingSchedules[0]) {
-          setSelectedSchedule(String(remainingSchedules[0].id));
           setCurrentScheduleId(remainingSchedules[0].id);
         } else {
-          setSelectedSchedule('');
           setCurrentScheduleId(null);
         }
       }
@@ -177,7 +172,7 @@ export default function Navbar() {
     setMounted(true);
   }, []);
 
-  // Handle user data fetching
+  // Handle user data fetching (parallelized)
   useEffect(() => {
     const fetchUserData = async () => {
       if (!user?.id) return;
@@ -186,19 +181,17 @@ export default function Navbar() {
         const id = await getUserIdFromClerkId(user.id);
         if (id) {
           setUserId(id);
-          // Fetch user's schedules
-          const response = await axios.get<Array<{ id: number; name: string }>>(`${API_BASE_URL}/users/schedules`, {
-            params: { user_id: id },
-            withCredentials: true,
-          });
-          setSchedules(response.data);
-          if (response.data.length > 0 && response.data[0]) {
-            const firstSchedule = response.data[0];
-            setSelectedSchedule(String(firstSchedule.id));
-            // Update context directly
-            setCurrentScheduleId(firstSchedule.id);
-          }
-          const role = await fetchRole(user?.id);
+          
+          // Parallel API calls for faster loading
+          const [schedulesResponse, role] = await Promise.all([
+            axios.get<Array<{ id: number; name: string }>>(`${API_BASE_URL}/users/schedules`, {
+              params: { user_id: id },
+              withCredentials: true,
+            }),
+            fetchRole(user?.id)
+          ]);
+          
+          setSchedules(schedulesResponse.data);
           setUserRole(role);
         } else {
           console.error("Failed to retrieve user ID from Clerk ID");
@@ -209,11 +202,10 @@ export default function Navbar() {
     };
 
     void fetchUserData();
-  }, [user?.id, setCurrentScheduleId]);
+  }, [user?.id]);
 
-  if (!userId) {
-    return <div>Loading...</div>;
-  }
+  // Render navbar immediately, show skeleton for schedule selector
+  const isLoading = !userId || currentScheduleId === null;
 
   const handleAdminDashboardRedirect = () => {
     if (userRole === "manager") {
@@ -265,7 +257,13 @@ export default function Navbar() {
 
           {/* Schedule Selector - Button or Dropdown */}
           <div className="relative">
-            {schedules.length === 0 ? (
+            {isLoading ? (
+              // Show skeleton while loading
+              <div className="h-10 px-4 py-2 border border-gray-300 rounded-lg bg-gray-100 dark:bg-gray-700 dark:border-gray-600 animate-pulse flex items-center gap-2">
+                <div className="w-4 h-4 bg-gray-300 dark:bg-gray-600 rounded"></div>
+                <div className="w-24 h-4 bg-gray-300 dark:bg-gray-600 rounded"></div>
+              </div>
+            ) : schedules.length === 0 ? (
               // Show button when no schedules exist
               <button
                 onClick={() => setShowNewScheduleInput(true)}
@@ -278,7 +276,7 @@ export default function Navbar() {
               // Show dropdown when schedules exist
               <FormControl sx={{ minWidth: 120 }} size="small">
                 <Select
-                  value={selectedSchedule}
+                  value={currentScheduleId ? String(currentScheduleId) : ''}
                   onChange={handleScheduleChange}
                   displayEmpty
                   inputProps={{ 'aria-label': 'Schedule selector' }}
@@ -287,7 +285,7 @@ export default function Navbar() {
                     return (
                       <div className="flex items-center gap-2">
                         <BsCalendar3 className="text-gray-600 dark:text-white" size={16} />
-                        <span className="text-sm text-gray-800 dark:text-white">{schedule?.name || 'Select Schedule'}</span>
+                        <span className="text-sm text-gray-800 dark:text-white">{schedule?.name ?? 'Select Schedule'}</span>
                       </div>
                     );
                   }}

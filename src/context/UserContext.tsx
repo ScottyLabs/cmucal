@@ -1,5 +1,5 @@
 'use client';
-import { createContext, useContext, useEffect, useState, useCallback } from "react";
+import { createContext, useContext, useEffect, useState, useCallback, useRef } from "react";
 import { useAuth } from "@clerk/nextjs";
 import { Course, Club } from "~/app/utils/types";
 import { getSchedule, removeCategoryFromSchedule } from "~/app/utils/api/schedules";
@@ -18,7 +18,6 @@ type UserContextType = {
   setClubs: (clubs: Club[]) => void;
   setCurrentScheduleId: (id: string | number | null) => void;
   fetchSchedule: (scheduleId?: string | number, silent?: boolean) => Promise<void>;
-  handleRemoveCategory: (categoryId: number) => Promise<void>;
   visibleCategories: Set<number>;
   setVisibleCategories: (categories: Set<number> | ((prev: Set<number>) => Set<number>)) => void;
   toggleCategoryVisibility: (categoryId: number) => void;
@@ -41,7 +40,9 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Store visibility per schedule: { scheduleId: Set<categoryId> }
   const [visibilityBySchedule, setVisibilityBySchedule] = useState<Map<string | number, Set<number>>>(new Map());
   
-  // Get visible categories for current schedule
+  // Track the previous schedule ID to detect actual changes
+  const previousScheduleId = useRef<string | number | null>(null);
+  
   const visibleCategories = visibilityBySchedule.get(currentScheduleId ?? 'default') ?? new Set<number>();
 
   const fetchSchedule = useCallback(async (scheduleId?: string | number, silent = false) => {
@@ -52,17 +53,36 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (data) {
         setCourses(data.courses || []);
         setClubs(data.clubs || []);
+        // Set the schedule ID if it was returned and not already set
+        if (data.schedule_id && !currentScheduleId) {
+          setCurrentScheduleId(data.schedule_id);
+        }
       }
     } catch (error) {
       console.error("Failed to fetch schedule", error);
     } finally {
       if (!silent) setLoading(false);
     }
-  }, [isLoaded, userId]);
+  }, [isLoaded, userId, currentScheduleId]);
 
+  // Fetch schedule on mount and when currentScheduleId changes
   useEffect(() => {
-    fetchSchedule(currentScheduleId || undefined);
-  }, [fetchSchedule, currentScheduleId]);
+    if (!isLoaded || !userId) return;
+    
+    // Only fetch if the schedule ID actually changed (not just from null to a value on first load)
+    if (previousScheduleId.current === null && currentScheduleId === null) {
+      // Initial load: fetch first/default schedule
+      void fetchSchedule(undefined);
+      previousScheduleId.current = currentScheduleId;
+    } else if (previousScheduleId.current !== currentScheduleId && previousScheduleId.current !== null) {
+      // Schedule changed after initial load: fetch specific schedule silently
+      void fetchSchedule(currentScheduleId ?? undefined, true);
+      previousScheduleId.current = currentScheduleId;
+    } else {
+      // Just update the ref without fetching (this handles null -> actual ID transition)
+      previousScheduleId.current = currentScheduleId;
+    }
+  }, [isLoaded, userId, currentScheduleId, fetchSchedule]);
 
   // Fetch all events on mount
   const fetchEvents = useCallback(async () => {
@@ -92,14 +112,6 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [isLoaded, userId, fetchEvents]);
 
-  const handleRemoveCategory = async (categoryId: number) => {
-    try {
-      await removeCategoryFromSchedule(categoryId, userId);
-      fetchSchedule(currentScheduleId || undefined);
-    } catch (error) {
-      console.error("Failed to remove category", error);
-    }
-  };
 
   const setVisibleCategories = useCallback((updater: Set<number> | ((prev: Set<number>) => Set<number>)) => {
     const scheduleKey = currentScheduleId ?? 'default';
@@ -164,7 +176,6 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setClubs,
       setCurrentScheduleId,
       fetchSchedule,
-      handleRemoveCategory,
       visibleCategories,
       setVisibleCategories,
       toggleCategoryVisibility,

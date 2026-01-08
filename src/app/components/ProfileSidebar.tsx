@@ -11,20 +11,16 @@ import { useUser } from "~/context/UserContext";
 interface ProfileSidebarProps {
   courses: Course[];
   clubs: Club[];
-  onRemoveCategory: (categoryId: number) => void;
   onCategoryToggle?: (categoryId: number, isVisible: boolean) => void;
   currentScheduleId?: number;
-  onScheduleUpdate?: () => void;
   visibleCategories?: Set<number>;
 }
 
 const ProfileSidebar: React.FC<ProfileSidebarProps> = ({ 
   courses, 
   clubs, 
-  onRemoveCategory,
   onCategoryToggle,
   currentScheduleId,
-  onScheduleUpdate,
   visibleCategories
 }) => {
   const { addOrganization, removeOrganization } = useUser();

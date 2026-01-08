@@ -18,7 +18,6 @@ export default function Home() {
     clubs, 
     loading, 
     currentScheduleId, 
-    handleRemoveCategory, 
     fetchSchedule,
     visibleCategories,
     toggleCategoryVisibility
@@ -91,10 +90,8 @@ export default function Home() {
         <ProfileSidebar 
           courses={courses} 
           clubs={clubs} 
-          onRemoveCategory={handleRemoveCategory}
           onCategoryToggle={handleEventToggle}
           currentScheduleId={currentScheduleId ? Number(currentScheduleId) : undefined}
-          onScheduleUpdate={() => fetchSchedule(currentScheduleId || undefined, true)}
           visibleCategories={visibleCategories}
         />
       } 
