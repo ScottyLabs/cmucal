@@ -16,6 +16,7 @@ type UserContextType = {
   handleRemoveCategory: (categoryId: number) => Promise<void>;
   visibleCategories: Set<number>;
   setVisibleCategories: (categories: Set<number> | ((prev: Set<number>) => Set<number>)) => void;
+  toggleCategoryVisibility: (categoryId: number) => void;
 };
 
 export const UserContext = createContext<UserContextType | null>(null);
@@ -27,7 +28,11 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [clubs, setClubs] = useState<Club[]>([]);
   const [currentScheduleId, setCurrentScheduleId] = useState<string | number | null>(null);
   const [loading, setLoading] = useState(true);
-  const [visibleCategories, setVisibleCategories] = useState<Set<number>>(new Set());
+  // Store visibility per schedule: { scheduleId: Set<categoryId> }
+  const [visibilityBySchedule, setVisibilityBySchedule] = useState<Map<string | number, Set<number>>>(new Map());
+  
+  // Get visible categories for current schedule
+  const visibleCategories = visibilityBySchedule.get(currentScheduleId ?? 'default') ?? new Set<number>();
 
   const fetchSchedule = useCallback(async (scheduleId?: string | number, silent = false) => {
     if (!isLoaded || !userId) return;
@@ -58,6 +63,29 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const setVisibleCategories = useCallback((updater: Set<number> | ((prev: Set<number>) => Set<number>)) => {
+    const scheduleKey = currentScheduleId ?? 'default';
+    setVisibilityBySchedule(prev => {
+      const newMap = new Map(prev);
+      const currentSet = newMap.get(scheduleKey) ?? new Set<number>();
+      const newSet = typeof updater === 'function' ? updater(currentSet) : updater;
+      newMap.set(scheduleKey, newSet);
+      return newMap;
+    });
+  }, [currentScheduleId]);
+
+  const toggleCategoryVisibility = useCallback((categoryId: number) => {
+    setVisibleCategories(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(categoryId)) {
+        newSet.delete(categoryId);
+      } else {
+        newSet.add(categoryId);
+      }
+      return newSet;
+    });
+  }, [setVisibleCategories]);
+
   return (
     <UserContext.Provider value={{
       courses,
@@ -71,6 +99,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       handleRemoveCategory,
       visibleCategories,
       setVisibleCategories,
+      toggleCategoryVisibility,
     }}>
       {children}
     </UserContext.Provider>

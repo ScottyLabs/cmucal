@@ -14,6 +14,7 @@ interface ProfileSidebarProps {
   onCategoryToggle?: (categoryId: number, isVisible: boolean) => void;
   currentScheduleId?: number;
   onScheduleUpdate?: () => void;
+  visibleCategories?: Set<number>;
 }
 
 const ProfileSidebar: React.FC<ProfileSidebarProps> = ({ 
@@ -22,9 +23,9 @@ const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
   onRemoveCategory,
   onCategoryToggle,
   currentScheduleId,
-  onScheduleUpdate
+  onScheduleUpdate,
+  visibleCategories
 }) => {
-  const [toggledCategories, setToggledCategories] = useState<Record<number, boolean>>({});
   const [isCoursesOpen, setIsCoursesOpen] = useState(true);
   const [isCoursesEditMode, setIsCoursesEditMode] = useState(false);
   const [isClubsOpen, setIsClubsOpen] = useState(true);
@@ -35,10 +36,6 @@ const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
   const [loadingCourses, setLoadingCourses] = useState(false);
   const [courseSearchTerm, setCourseSearchTerm] = useState("");
   const [clubSearchTerm, setClubSearchTerm] = useState("");
-
-  const handleToggle = (categoryId: number) => {
-    setToggledCategories(prev => ({...prev, [categoryId]: !prev[categoryId]}));
-  };
 
   // Fetch available clubs
   const fetchClubs = async () => {
@@ -289,10 +286,9 @@ const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
                           <ToggleItem
                             key={category.id}
                             label={category.name}
-                            checked={toggledCategories[category.id] ?? false}
+                            checked={visibleCategories?.has(category.id) ?? false}
                             onChange={() => {
-                              handleToggle(category.id);
-                              onCategoryToggle?.(category.id, !toggledCategories[category.id]);
+                              onCategoryToggle?.(category.id, !visibleCategories?.has(category.id));
                             }}
                             color="red"
                           />
@@ -421,10 +417,9 @@ const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
                       <ToggleItem
                         key={category.id}
                         label={category.name}
-                        checked={toggledCategories[category.id] ?? false}
+                        checked={visibleCategories?.has(category.id) ?? false}
                         onChange={() => {
-                          handleToggle(category.id);
-                          onCategoryToggle?.(category.id, !toggledCategories[category.id]);
+                          onCategoryToggle?.(category.id, !visibleCategories?.has(category.id));
                         }}
                         color="green"
                       />

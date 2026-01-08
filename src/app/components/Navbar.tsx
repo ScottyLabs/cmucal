@@ -4,7 +4,7 @@ import { usePathname } from "next/navigation"; // Detects the current path
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { FiSearch, FiMoon, FiSun, FiLogOut } from "react-icons/fi"; // Search, dark mode, logout
+import { FiSearch, FiMoon, FiSun, FiLogOut, FiTrash2 } from "react-icons/fi"; // Search, dark mode, logout
 import { FaRegUser } from "react-icons/fa"; // User icon
 import { BsCalendar3 } from "react-icons/bs"; // Calendar icon
 import { GrUserManager } from "react-icons/gr"; // Manager icon
@@ -65,8 +65,15 @@ export default function Navbar() {
   };
 
   const handleScheduleChange = (event: SelectChangeEvent) => {
-    const schedule = schedules.find(s => s.name === event.target.value) || null;
-    setSelectedSchedule(event.target.value);
+    // Don't change schedule if "new" is selected - just open the modal
+    if (event.target.value === 'new') {
+      setShowNewScheduleInput(true);
+      return;
+    }
+    
+    const scheduleId = Number(event.target.value);
+    const schedule = schedules.find(s => s.id === scheduleId) || null;
+    setSelectedSchedule(String(scheduleId));
     // Update context directly
     setCurrentScheduleId(schedule?.id ?? null);
   };
@@ -99,7 +106,7 @@ export default function Navbar() {
         // Update local state
         const newSchedule = { id: newScheduleId, name: newScheduleName_trimmed };
         setSchedules(prev => [...prev, newSchedule]);
-        setSelectedSchedule(newScheduleName_trimmed);
+        setSelectedSchedule(String(newScheduleId));
         setShowNewScheduleInput(false);
         setNewScheduleName('');
 
@@ -115,6 +122,52 @@ export default function Navbar() {
       }
     } catch (error: any) {
       console.error("Failed to create schedule:", error.response?.data?.error || error.message);
+    }
+  };
+
+  const handleDeleteSchedule = async (scheduleId: number, scheduleName: string, event: React.MouseEvent) => {
+    event.stopPropagation(); // Prevent the select from opening/closing
+    
+    if (!user?.id) {
+      console.error("User not logged in");
+      return;
+    }
+
+    // Confirm deletion
+    if (!confirm(`Are you sure you want to delete "${scheduleName}"?`)) {
+      return;
+    }
+
+    try {
+      const id = await getUserIdFromClerkId(user.id);
+      if (!id) {
+        console.error("No user ID available");
+        return;
+      }
+
+      // Delete schedule
+      await axios.delete(`${API_BASE_URL}/users/delete_schedule`, {
+        data: { schedule_id: scheduleId },
+        withCredentials: true,
+      });
+
+      // Remove from local state
+      setSchedules(prev => prev.filter(s => s.id !== scheduleId));
+
+      // If we deleted the current schedule, switch to the first available one
+      if (Number(selectedSchedule) === scheduleId) {
+        const remainingSchedules = schedules.filter(s => s.id !== scheduleId);
+        if (remainingSchedules.length > 0 && remainingSchedules[0]) {
+          setSelectedSchedule(String(remainingSchedules[0].id));
+          setCurrentScheduleId(remainingSchedules[0].id);
+        } else {
+          setSelectedSchedule('');
+          setCurrentScheduleId(null);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to delete schedule:", error);
+      alert("Failed to delete schedule. Please try again.");
     }
   };
 
@@ -141,7 +194,7 @@ export default function Navbar() {
           setSchedules(response.data);
           if (response.data.length > 0 && response.data[0]) {
             const firstSchedule = response.data[0];
-            setSelectedSchedule(firstSchedule.name);
+            setSelectedSchedule(String(firstSchedule.id));
             // Update context directly
             setCurrentScheduleId(firstSchedule.id);
           }
@@ -229,6 +282,15 @@ export default function Navbar() {
                   onChange={handleScheduleChange}
                   displayEmpty
                   inputProps={{ 'aria-label': 'Schedule selector' }}
+                  renderValue={(value) => {
+                    const schedule = schedules.find(s => s.id === Number(value));
+                    return (
+                      <div className="flex items-center gap-2">
+                        <BsCalendar3 className="text-gray-600 dark:text-white" size={16} />
+                        <span className="text-sm text-gray-800 dark:text-white">{schedule?.name || 'Select Schedule'}</span>
+                      </div>
+                    );
+                  }}
                   sx={{
                     border: "1px solid #D1D5DB",
                     borderRadius: "8px",
@@ -251,14 +313,33 @@ export default function Navbar() {
                   }}
                 >
                   {schedules.map((schedule) => (
-                    <MenuItem key={schedule.id} value={schedule.name}>
-                      <div className="flex items-center gap-2">
-                        <BsCalendar3 className="text-gray-600 dark:text-white" size={16} />
-                        <span className="text-sm text-gray-800 dark:text-white">{schedule.name}</span>
+                    <MenuItem 
+                      key={schedule.id} 
+                      value={String(schedule.id)}
+                      sx={{
+                        '& .delete-icon': {
+                          opacity: 0,
+                        },
+                        '&:hover .delete-icon': {
+                          opacity: 1,
+                        }
+                      }}
+                    >
+                      <div className="flex items-center justify-between w-full gap-2">
+                        <div className="flex items-center gap-2">
+                          <BsCalendar3 className="text-gray-600 dark:text-white" size={16} />
+                          <span className="text-sm text-gray-800 dark:text-white">{schedule.name}</span>
+                        </div>
+                        <button
+                          className="delete-icon transition-opacity"
+                          onClick={(e) => handleDeleteSchedule(schedule.id, schedule.name, e)}
+                        >
+                          <FiTrash2 className="text-gray-400 hover:text-red-500" size={16} />
+                        </button>
                       </div>
                     </MenuItem>
                   ))}
-                  <MenuItem value="new" onClick={() => setShowNewScheduleInput(true)}>
+                  <MenuItem value="new">
                     <div className="flex items-center gap-2 text-blue-500">
                       <span className="text-sm">+ Create New Schedule</span>
                     </div>

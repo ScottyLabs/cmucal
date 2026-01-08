@@ -21,19 +21,11 @@ export default function Home() {
     handleRemoveCategory, 
     fetchSchedule,
     visibleCategories,
-    setVisibleCategories 
+    toggleCategoryVisibility
   } = useUser();
 
-  const handleEventToggle = (categoryId: number, isVisible: boolean) => {
-    setVisibleCategories(prev => {
-      const newSet = new Set(prev);
-      if (isVisible) {
-        newSet.add(categoryId);
-      } else {
-        newSet.delete(categoryId);
-      }
-      return newSet;
-    });
+  const handleEventToggle = (categoryId: number, _isVisible: boolean) => {
+    toggleCategoryVisibility(categoryId);
   };
 
   useEffect(() => {
@@ -103,6 +95,7 @@ export default function Home() {
           onCategoryToggle={handleEventToggle}
           currentScheduleId={currentScheduleId ? Number(currentScheduleId) : undefined}
           onScheduleUpdate={() => fetchSchedule(currentScheduleId || undefined, true)}
+          visibleCategories={visibleCategories}
         />
       } 
       // rightContent={<Calendar events={calendarEvents} setEvents={setCalendarEvents} setEventId={() => {}}/>} 
