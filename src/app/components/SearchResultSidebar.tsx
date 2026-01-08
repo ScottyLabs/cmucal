@@ -7,7 +7,6 @@ import { FiSearch } from "react-icons/fi";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 
-
 import { EventClickArg } from "@fullcalendar/core"; 
 import { EventType } from "../types/EventType";
 import { useEventState } from "../../context/EventStateContext";
@@ -16,7 +15,6 @@ import React from 'react'
 import Select from 'react-select'
 import { fetchAllTags } from "../utils/api/events";
 import { API_BASE_URL, api } from "../utils/api/api";
-
 
 type Props = {
   events: EventType[];
@@ -29,19 +27,17 @@ type OptionType = {
   label: string;
 };
 
-function useDebounce(value: string, delay: number) {
+// Debounce hook for search input
+function useDebounce<T>(value: T, delay: number): T {
   const [debouncedValue, setDebouncedValue] = useState(value);
 
   useEffect(() => {
     const handler = setTimeout(() => setDebouncedValue(value), delay);
-
-    // Cancel the timeout if value changes or component unmounts
     return () => clearTimeout(handler);
   }, [value, delay]);
 
   return debouncedValue;
 }
-
 
 function SkeletonEventCard() { 
   return (
@@ -65,53 +61,115 @@ export default function SearchResultsSidebar({ events, setEvents }: Props) {
   const [selectedTags, setSelectedTags] = useState<OptionType[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const debouncedSearchTerm = useDebounce(searchTerm, 400); // 400ms debounce
-  const [filteredEvents, setFilteredEvents] = useState<EventType[]>([]);
+  const [allEvents, setAllEvents] = useState<EventType[]>([]);
   const { openDetails, toggleAdded, savedEventIds } = useEventState();
   const [loading, setLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const EVENTS_PER_PAGE = 20;
 
-  // fetch tags and convert to Select options
+  // Fetch tags and initial events on mount
   useEffect(() => {
-    const fetchTags = async () => {
+    const fetchData = async () => {
+      setLoading(true);
       try {
-        const data = await fetchAllTags();
-        setAllTags(data)
-        console.log("Fetched tags:", data);
+        const [tagsData, eventsData] = await Promise.all([
+          fetchAllTags(),
+          api.get(`/events/`, {
+            headers: { "Clerk-User-Id": user?.id },
+            params: {
+              term: '',
+              tags: '',
+              date: '',
+            },
+            withCredentials: true,
+          })
+        ]);
+        setAllTags(tagsData);
+        setAllEvents(eventsData.data);
       } catch (err) {
-        console.error("Failed to fetch tags", err)
+        console.error("Failed to fetch data", err);
+      } finally {
+        setLoading(false);
       }
     };
-    fetchTags();
-  }, []);
+    if (user?.id) {
+      void fetchData();
+    }
+  }, [user?.id]);
+
+  // Refetch events when tags change
+  useEffect(() => {
+    // Skip on initial mount (already fetched above)
+    if (selectedTags.length === 0) return;
+    
+    const selectedTagIds = selectedTags.map((tag) => tag.value).join(",");
+    const fetchEvents = async () => {
+      setLoading(true);
+      try {
+        const res = await api.get(`/events/`, {
+          headers: { "Clerk-User-Id": user?.id },
+          params: {
+            term: '',
+            tags: selectedTagIds,
+            date: '',
+          },
+          withCredentials: true,
+        });
+        setAllEvents(res.data);
+      } catch (err) {
+        console.error("Failed to fetch events", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    if (user?.id) {
+      void fetchEvents();
+    }
+  }, [selectedTags, user?.id]);
   const tagOptions = allTags.map(tag => ({
     value: tag.id,
     label: tag.name,
   }));
 
-  // fetch sidebar events conditioned on filters (search term, tags, start date)
+  // Client-side filtering for search term and date (optimized)
+  const filteredEvents = useMemo(() => {
+    let filtered = allEvents;
+    
+    // Filter by date first (fastest check)
+    if (selectedDate) {
+      const filterDate = selectedDate.toDateString();
+      filtered = filtered.filter(event => 
+        new Date(event.start_datetime).toDateString() === filterDate
+      );
+    }
+    
+    // Filter by search term
+    if (searchTerm) {
+      const searchLower = searchTerm.toLowerCase();
+      filtered = filtered.filter(event => {
+        const matchesTitle = event.title.toLowerCase().includes(searchLower);
+        const matchesDescription = event.description?.toLowerCase().includes(searchLower) ?? false;
+        const matchesLocation = event.location?.toLowerCase().includes(searchLower);
+        return matchesTitle || matchesDescription || matchesLocation;
+      });
+    }
+    
+    return filtered;
+  }, [allEvents, searchTerm, selectedDate]);
+
+  // Paginate filtered events
+  const paginatedEvents = useMemo(() => {
+    const startIndex = (currentPage - 1) * EVENTS_PER_PAGE;
+    const endIndex = startIndex + EVENTS_PER_PAGE;
+    return filteredEvents.slice(startIndex, endIndex);
+  }, [filteredEvents, currentPage, EVENTS_PER_PAGE]);
+
+  const totalPages = Math.ceil(filteredEvents.length / EVENTS_PER_PAGE);
+
+  // Reset to page 1 when filters change
   useEffect(() => {
-    const selectedTagIds = selectedTags.map((tag) => tag.value).join(",");
-    const fetchEvents = async () => {
-      try {
-        setLoading(true);
-        const res = await api.get(`/events/`, {
-          headers: { "Clerk-User-Id": user?.id },
-          params: {
-            term: debouncedSearchTerm,
-            tags: selectedTagIds,
-            date: selectedDate,
-          },
-          withCredentials: true,      
-        })
-        setFilteredEvents(res.data);
-      } catch (err) {
-        console.error("Failed to filter events by condition", err)
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchEvents();
-  }, [debouncedSearchTerm, selectedTags, selectedDate])
+    setCurrentPage(1);
+  }, [searchTerm, selectedDate, selectedTags]);
   
   return (
     <div className="px-8 py-3">
@@ -121,27 +179,63 @@ export default function SearchResultsSidebar({ events, setEvents }: Props) {
         <input
           type="text"
           placeholder="Search for a schedule or event..."
-          className="w-full p-2 pl-10 border rounded-md bg-white dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-1 focus:ring-gray-400 dark:focus:ring-gray-500"
+          className="w-full h-10 px-4 pl-10 py-2 text-sm border border-gray-300 rounded-lg bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors focus:outline-none focus:ring-1 focus:ring-gray-400"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />
       </div>
 
       {/* filter bar */}
-      <div className="flex flex-wrap items-center mb-4 text-gray-300">
-      <Select className="rounded mb-3 min-w-[200px]"
-        isMulti 
-        options={tagOptions} 
-        placeholder="Tags"
-        value={selectedTags}
-        onChange={(selectedOptions) => setSelectedTags(selectedOptions as OptionType[])}/>
-        
-      <DatePicker className="rounded mb-3 p-2 border text-gray-300"
-        selected={selectedDate} 
-        onChange={(date) => setSelectedDate(date)} 
-        placeholderText="Date"
-        isClearable />
+      <div className="flex items-center gap-2 mb-4 w-full max-w-md">
+        <div className="flex-1">
+          <Select
+            isMulti 
+            options={tagOptions} 
+            placeholder="Tags"
+            value={selectedTags}
+            onChange={(selectedOptions) => setSelectedTags(selectedOptions as OptionType[])}
+            styles={{
+              control: (base) => ({
+                ...base,
+                minHeight: '40px',
+                height: '40px',
+                borderRadius: '8px',
+                border: '1px solid #D1D5DB',
+                backgroundColor: 'white',
+                '&:hover': {
+                  backgroundColor: '#f9fafb',
+                },
+              }),
+              valueContainer: (base) => ({
+                ...base,
+                height: '40px',
+                padding: '0 8px',
+              }),
+              input: (base) => ({
+                ...base,
+                margin: '0px',
+              }),
+              indicatorsContainer: (base) => ({
+                ...base,
+                height: '40px',
+              }),
+            }}
+            className="dark:bg-gray-700"
+          />
         </div>
+        <div className="flex-1">
+        <div className="[&_.react-datepicker-wrapper]:block [&_.react-datepicker-wrapper]:w-full [&_.react-datepicker__input-container]:block [&_.react-datepicker__input-container]:w-full w-full">
+            
+          <DatePicker
+            className="w-full h-10 px-4 py-2 text-sm border border-gray-300 rounded-lg bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors focus:outline-none focus:ring-1 focus:ring-gray-400"
+            selected={selectedDate} 
+            onChange={(date) => setSelectedDate(date)} 
+            placeholderText="Date"
+            isClearable
+          />
+          </div>
+        </div>
+      </div>
 
       {/* event cards */}
       <div>
@@ -156,7 +250,7 @@ export default function SearchResultsSidebar({ events, setEvents }: Props) {
             No matching events found.
           </li>
         )}
-        {filteredEvents.map((event) => (
+        {paginatedEvents.map((event) => (
           <li key={event.id} className="p-3 rounded border">
             <p className="text-sm text-gray-400">EVENT</p>
             <p className="text-lg">{event.title}</p>
@@ -181,7 +275,28 @@ export default function SearchResultsSidebar({ events, setEvents }: Props) {
       </ul>}
       </div>
 
-      
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div className="flex justify-center items-center gap-2 mt-6">
+          <button
+            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+            disabled={currentPage === 1}
+            className="px-3 py-1 rounded bg-gray-200 dark:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Previous
+          </button>
+          <span className="text-sm text-gray-600 dark:text-gray-400">
+            Page {currentPage} of {totalPages} ({filteredEvents.length} events)
+          </span>
+          <button
+            onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+            disabled={currentPage === totalPages}
+            className="px-3 py-1 rounded bg-gray-200 dark:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Next
+          </button>
+        </div>
+      )}
     </div>
   );
 }
