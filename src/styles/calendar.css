@@ -1,102 +1,170 @@
-.fc { /* the calendar root */
-    max-width: 1100px;
-    margin: 0 auto;
-  }
+.fc {
+  /* the calendar root */
+  max-width: 1100px;
+  margin: 0 auto;
+}
 
-  /* .fc-daygrid-event */
-  
-  /* Full Day Events */
-  /* full-day events, where allDay:true in events */
-  .fc-event { 
-    background-color: #182C4B; 
-    color: white;
-    padding-left: 4px;
-  }
+/* Customize header and title colors */
+.fc-toolbar-title {
+  color: #4B5563;
+  font-weight: 600;
+  font-size: 1.4em !important;
+}
 
-  /* Base styles for all FullCalendar buttons */
+.dark .fc-toolbar-title {
+  color: #e5e7eb;
+}
 
-  /* theres gatta be a better way to do this */
-  .fc-button {
-    background-color: white !important;
-    border: 1px solid #D1D5DB !important;
-    border-radius: 8px !important;
-    height: 40px !important;
-    color: #374151 !important;
-    padding: 0 16px !important;
-  }
+.fc .fc-timegrid-slot {
+  height: 0.5em;
+}
 
-  .fc-button:hover:not(:disabled):not(.fc-button-active) {
-    background-color: #f9fafb !important;
-  }
+.fc-col-header-cell-cushion,
+.fc-timegrid-slot-label-cushion {
+  color: #4B5563;
+  font-weight: 400;
+  font-size: 0.9em;
+}
 
-  .fc-button:focus {
-    box-shadow: none !important;
-    border: 1px solid #D1D5DB !important;
-  }
+.fc-timegrid-axis-cushion {
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+}
 
-  .fc-button:disabled {
-    opacity: 0.5 !important;
-    cursor: not-allowed !important;
-    background-color: #f3f4f6 !important;
-  }
+.dark .fc-col-header-cell-cushion,
+.dark .fc-timegrid-slot-label-cushion {
+  color: #e5e7eb;
+}
 
-  /* Active state for view buttons */
-  .fc-button-active {
-    background-color: #e5e7eb !important;
-    border-color: #D1D5DB !important;
-  }
 
-  .dark .fc-button {
-    background-color: #374151 !important;
-    border: 1px solid #4D5461 !important;
-    color: #e5e7eb !important;
-  }
+.fc-col-header {
+  background-color: #F5F6F8;
+}
 
-  .dark .fc-button:hover:not(:disabled):not(.fc-button-active) {
-    background-color: #4b5563 !important;
-  }
+.dark .fc-col-header {
+  background-color: #1C1F26;
+}
 
-  .dark .fc-button:disabled {
-    background-color: #1f2937 !important;
-    opacity: 0.5 !important;
-  }
+.fc-timegrid-axis-frame {
+  display: none !important;
+}
 
-  .dark .fc-button-active {
-    background-color: #4b5563 !important;
-    border-color: #4D5461 !important;
-  }
+.fc-scrollgrid,
+.fc-scrollgrid td,
+.fc-scrollgrid th {
+  border-color:rgba(229, 231, 235, 0.5);
+}
 
-  /* Button group styling */
-  .fc-button-group {
-    gap: 0 !important;
-  }
+.dark .fc-scrollgrid,
+.dark .fc-scrollgrid td,
+.dark .fc-scrollgrid th {
+  border-color:rgba(229, 231, 235, 0.1);
+}
 
-  .fc-button-group > .fc-button {
-    border-radius: 0 !important;
-    margin-left: -1px !important;
-  }
 
-  .fc-button-group > .fc-button:first-child {
-    border-top-left-radius: 8px !important;
-    border-bottom-left-radius: 8px !important;
-    margin-left: 0 !important;
-  }
+.fc-scrollgrid-sync-table {
+  display: none !important;
+}
 
-  .fc-button-group > .fc-button:last-child {
-    border-top-right-radius: 8px !important;
-    border-bottom-right-radius: 8px !important;
-  }
 
-  
-  .fc-event.gcal-event { /* full-day gcal events */
-    background-color: #425575;
-  }
-  
-  .fc-event.cmucal-event { /* full-day cmu-cal events */
-    background-color: #719F94;
-  }
+/* .fc-daygrid-event */
 
-  /* .fc-event.temp-course-event {
+/* Full Day Events */
+/* full-day events, where allDay:true in events */
+.fc-event {
+  background-color: #182C4B;
+  color: white;
+  padding-left: 4px;
+}
+
+
+
+/* Base styles for all FullCalendar buttons */
+
+/* theres gatta be a better way to do this */
+.fc-button {
+  background-color: white !important;
+  border: 1px solid #D1D5DB !important;
+  border-radius: 8px !important;
+  height: 40px !important;
+  color: #374151 !important;
+  padding: 0 16px !important;
+}
+
+.fc-button:hover:not(:disabled):not(.fc-button-active) {
+  background-color: #f9fafb !important;
+}
+
+.fc-button:focus {
+  box-shadow: none !important;
+  border: 1px solid #D1D5DB !important;
+}
+
+.fc-button:disabled {
+  opacity: 0.5 !important;
+  cursor: not-allowed !important;
+  background-color: #f3f4f6 !important;
+}
+
+/* Active state for view buttons */
+.fc-button-active {
+  background-color: #e5e7eb !important;
+  border-color: #D1D5DB !important;
+}
+
+.dark .fc-button {
+  background-color: #374151 !important;
+  border: 1px solid #4D5461 !important;
+  color: #e5e7eb !important;
+}
+
+.dark .fc-button:hover:not(:disabled):not(.fc-button-active) {
+  background-color: #4b5563 !important;
+}
+
+.dark .fc-button:disabled {
+  background-color: #1f2937 !important;
+  opacity: 0.5 !important;
+}
+
+.dark .fc-button-active {
+  background-color: #4b5563 !important;
+  border-color: #4D5461 !important;
+}
+
+/* Button group styling */
+.fc-button-group {
+  gap: 0 !important;
+}
+
+.fc-button-group>.fc-button {
+  border-radius: 0 !important;
+  margin-left: -1px !important;
+}
+
+.fc-button-group>.fc-button:first-child {
+  border-top-left-radius: 8px !important;
+  border-bottom-left-radius: 8px !important;
+  margin-left: 0 !important;
+}
+
+.fc-button-group>.fc-button:last-child {
+  border-top-right-radius: 8px !important;
+  border-bottom-right-radius: 8px !important;
+}
+
+
+.fc-event.gcal-event {
+  /* full-day gcal events */
+  background-color: #425575;
+}
+
+.fc-event.cmucal-event {
+  /* full-day cmu-cal events */
+  background-color: #719F94;
+}
+
+/* .fc-event.temp-course-event {
     background-color: #f87171;
   }
 
