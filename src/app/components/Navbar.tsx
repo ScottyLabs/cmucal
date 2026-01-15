@@ -178,17 +178,21 @@ export default function Navbar() {
 
   return (
     <>
-      <nav className="flex sticky top-0 z-50 items-center justify-between px-4 py-3 border-b border-b-gray-300 dark:border-b-gray-600 bg-white dark:bg-gray-800 shadow-md dark:shadow-lg">
+        <nav className="flex sticky top-0 z-50 items-center justify-between px-4 py-3
+        border-b border-b-[#E5E7EB] dark:border-b-[#262A32]
+        bg-[#F5F6F8] dark:bg-[#1C1F26]
+        shadow-md dark:shadow-lg">
         {/* Left Section: Title + Segmented Selector + Schedule Dropdown */}
         <div className="flex items-center gap-3">
           {/* CMUCal Title */}
           <Link href="/" className="flex items-center gap-1 mr-2">
             <img src="/newLogo.png" alt="CMUCal Logo" className="w-10 h-10 object-contain" />
-            <h1 className="text-xl font-semibold text-gray-800 dark:text-white">CMUCal</h1>
+            <h1 className="text-xl font-semibold text-gray-800 dark:text-[#E6E8EC]">CMUCal</h1>
           </Link>
           
           {/* Segmented Selector for Home/Explore */}
-          <div className="h-10 flex items-center border border-gray-300 rounded-lg bg-white dark:bg-gray-700 dark:border-gray-600 overflow-hidden">
+          <div className="h-10 flex items-center border border-[#E5E7EB] rounded-lg
+          bg-white dark:bg-[#16181D] dark:border-[#262A32] overflow-hidden">
             <Link href="/" className="flex-1">
               <div
                 className={`flex items-center justify-center h-10 px-3 cursor-pointer transition-colors
@@ -197,7 +201,7 @@ export default function Navbar() {
                     : "hover:bg-gray-50 dark:hover:bg-gray-600"}
                 `}
               >
-              <FaRegUser className="w-5 h-5 text-gray-700 dark:text-gray-300" size={18} />
+              <FaRegUser className="w-5 h-5 text-gray-700 dark:text-text-[#A1A6B0]" size={18} />
               </div>
             </Link>
 
@@ -209,7 +213,7 @@ export default function Navbar() {
                 ${pathname === "/explore" 
                   ? "bg-gray-100 dark:bg-gray-600" 
                   : "hover:bg-gray-50 dark:hover:bg-gray-600"}`}>
-                <FiSearch className="w-5 h-5 text-gray-700 dark:text-gray-300" size={20} />
+                <FiSearch className="w-5 h-5 text-gray-700 dark:text-text-[#A1A6B0]" size={20} />
               </div>
             </Link>
           </div>
@@ -249,8 +253,8 @@ export default function Navbar() {
                     height: "40px",
                     backgroundColor: "white",
                     '.dark &': {
-                      backgroundColor: "#374151",
-                      border: "1px solid #4D5461",
+                      backgroundColor: "#16181D",
+                      border: "1px solid #262A32",
                     }
                   }}
                 >
@@ -272,7 +276,7 @@ export default function Navbar() {
             )}
             
             {showNewScheduleInput && (
-              <div className="absolute top-full left-0 mt-2 p-3 bg-white dark:bg-gray-800 border rounded-md shadow-lg z-50 min-w-[250px]">
+              <div className="absolute top-full left-0 mt-2 p-3 bg-white dark:bg-[#16181D] border rounded-md shadow-lg z-50 min-w-[250px]">
                 <input
                   type="text"
                   value={newScheduleName}
@@ -312,7 +316,7 @@ export default function Navbar() {
           {/* Upload Button */}
           <button
             onClick={() => openPreUpload()}
-            className="flex items-center justify-center w-10 h-10 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            className="flex items-center justify-center w-10 h-10 rounded-md hover:bg-gray-100 dark:hover:bg-[#232733] transition-colors"
           >
             <FiUpload className="text-gray-600 dark:text-gray-300" size={20} />
           </button>
@@ -320,7 +324,7 @@ export default function Navbar() {
           {mounted && (
             <button
               onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-              className="flex items-center justify-center w-10 h-10 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              className="flex items-center justify-center w-10 h-10 rounded-md hover:bg-gray-100 dark:hover:bg-[#232733] transition-colors"
             >
               {theme === "dark" ? (
                 <FiSun className="text-yellow-400" size={20} />

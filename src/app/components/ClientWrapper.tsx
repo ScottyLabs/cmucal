@@ -45,7 +45,7 @@ export default async function ClientWrapper({ children }: { children: React.Reac
               {children}
             </SignedIn>
             <SignedOut>
-              <div className="flex justify-center items-center h-[90vh] dark:bg-gray-700">
+              <div className="flex justify-center items-center h-[90vh] dark:#0F1115">
                 <Welcome />
               </div>
             </SignedOut>

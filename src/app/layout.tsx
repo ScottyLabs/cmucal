@@ -18,7 +18,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <ClerkProvider>
       <html lang="en">
-        <body className={`${inter.variable} ${geistMono.variable} font-sans antialiased dark:bg-gray-800`}>
+        <body className={`${inter.variable} ${geistMono.variable} font-sans antialiased dark:#0F1115`}>
           <ClientWrapper>{children}</ClientWrapper>
         </body>
       </html>
