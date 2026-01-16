@@ -42,7 +42,9 @@
 }
 
 .dark .fc-col-header {
-  background-color: #1C1F26;
+  /* background-color: #1C1F26; */
+  background-color: #2a313e !important;
+
 }
 
 .fc-timegrid-axis-frame {
@@ -62,10 +64,14 @@
 }
 
 
-.fc-scrollgrid-sync-table {
+/* .fc-scrollgrid-sync-table {
   display: none !important;
-}
+} */
 
+/* TimeGrid (week/day view) */
+.fc .fc-timegrid-col.fc-day-today {
+  background-color: rgba(59, 130, 246, 0.10);
+} 
 
 /* .fc-daygrid-event */
 
@@ -113,8 +119,8 @@
 }
 
 .dark .fc-button {
-  background-color: #374151 !important;
-  border: 1px solid #4D5461 !important;
+  background-color: #1C1F26 !important;
+  border: 0.2px solid #4D5461 !important;
   color: #e5e7eb !important;
 }
 
@@ -128,7 +134,7 @@
 }
 
 .dark .fc-button-active {
-  background-color: #4b5563 !important;
+  background-color: #2f323e !important;
   border-color: #4D5461 !important;
 }
 
