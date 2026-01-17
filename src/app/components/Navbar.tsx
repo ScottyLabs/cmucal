@@ -200,7 +200,7 @@ export default function Navbar() {
     <>
         <nav className="flex sticky top-0 z-50 items-center justify-between px-4 py-3
         border-b border-b-[#E5E7EB] dark:border-b-[#262A32]
-        bg-[#F5F6F8] dark:bg-[#1C1F26]
+        bg-white dark:bg-[#1C1F26]
         shadow-md dark:shadow-lg">
         {/* Left Section: Title + Segmented Selector + Schedule Dropdown */}
         <div className="flex items-center gap-3">
