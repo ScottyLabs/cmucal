@@ -249,6 +249,7 @@ export default function ModalEventForm({ show, onClose, selectedCategory, eventT
               ? dayjs.tz(date.format("YYYY-MM-DD") + "T" + endTime.format("HH:mm"), timezone).utc().toISOString()
               : null,
             is_all_day: allDay,
+            event_timezone: timezone,
             location: location,
             source_url: sourceURL,
             event_type: selectedEventType in eventTypesDict
