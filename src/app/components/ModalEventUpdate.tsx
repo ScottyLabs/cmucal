@@ -4,7 +4,9 @@ import ModalEventForm from './ModalEventForm'
 import { useEventState } from "../../context/EventStateContext";
 import { EventType } from '../types/EventType';
 import { useUser } from '@clerk/nextjs';
+import CustomRecurrenceModal from "./CustomRecurrenceModal"; 
 import { formatRecurrence, toDBRecurrenceEnds, toRRuleFrequency, getNthDayOfWeekInMonth, isLastWeekdayInMonth } from "../utils/dateService";
+import { RecurrenceInput, EventPayloadType, CourseOption } from "../utils/types";
 
 
 import { TextField, Autocomplete, Chip, FormControl, InputLabel, Select, MenuItem, Box, Typography, FormControlLabel, Checkbox } from '@mui/material';
@@ -27,15 +29,17 @@ type ModalEventProps = {
     onClose: () => void;
     oldEventInfo: EventType;
     savedEventTags: Tag[];
+    oldRecurrenceRule: RecurrenceInput;
+    oldRepeat: "none" | "daily" | "weekly" | "monthly_nth" | "monthly_last" | "yearly" | "custom";
 }
 
 
-export default function ModalEventUpdate({ show, onClose, oldEventInfo, savedEventTags }: ModalEventProps) {
+export default function ModalEventUpdate({ show, onClose, oldEventInfo, savedEventTags, oldRecurrenceRule, oldRepeat }: ModalEventProps) {
     const { user } = useUser();
     const { selectedEvent, openDetails, closeModal } = useEventState();
     // const [currentCategory, setCurrentCategory] = useState(null);
     // const [oldEventInfo, setCurrentInfo] = useState();
-    console.log("show update modal!!", show, oldEventInfo)
+    console.log("show update modal!!", show, oldEventInfo, savedEventTags, oldRecurrenceRule)
 
     // const eventId = selectedEvent;
     const [title, setTitle] = useState(oldEventInfo?.title || "");
@@ -48,11 +52,11 @@ export default function ModalEventUpdate({ show, onClose, oldEventInfo, savedEve
     const [sourceURLError, setSourceURLError] = useState(false);
     const [description, setDescription] = useState(oldEventInfo?.description || "");
 
-    const [date, setDate] = useState<Dayjs | null>(null);
-    const [startTime, setStartTime] = useState<Dayjs | null>(null);
-    const [endTime, setEndTime] = useState<Dayjs | null>(null);
-    const [allDay, setAllDay] = useState(false);
-    const [repeat, setRepeat] = useState("none");
+    const [date, setDate] = useState<Dayjs | null>(dayjs(oldEventInfo.start_datetime) || null);
+    const [startTime, setStartTime] = useState<Dayjs | null>(dayjs(oldEventInfo.start_datetime) || null);
+    const [endTime, setEndTime] = useState<Dayjs | null>(dayjs(oldEventInfo.end_datetime) || null);
+    const [allDay, setAllDay] = useState(oldEventInfo.is_all_day || false);
+    const [repeat, setRepeat] = useState(oldRepeat || "none");
 
     // recurrence settings
     const [showCustomRecurrence, setShowCustomRecurrence] = useState(false);
@@ -68,13 +72,13 @@ export default function ModalEventUpdate({ show, onClose, oldEventInfo, savedEve
         "UTC", "Europe/London", "Asia/Tokyo", "Asia/Qatar"
     ];
 
-    const [interval, setInterval] = useState(1);
-    const [frequency, setFrequency] = useState("WEEKLY"); // default to weekly
-    const [selectedDays, setSelectedDays] = useState<number[]>([1, 2, 3, 4, 5]); // M-F
-    const [nthWeek, setNthWeek] = useState<number | null>(null);
-    const [ends, setEnds] = useState("never");
-    const [endDate, setEndDate] = useState<Dayjs | null>(null);
-    const [occurrences, setOccurrences] = useState<number>(13);
+    const [interval, setInterval] = useState(oldRecurrenceRule?.interval ?? 1); // every X unit-of-time
+    const [frequency, setFrequency] = useState(oldRecurrenceRule?.frequency ?? "WEEKLY"); // default to weekly
+    const [selectedDays, setSelectedDays] = useState<number[]>(oldRecurrenceRule?.selectedDays ?? [1, 2, 3, 4, 5]); // default to M-F
+    const [nthWeek, setNthWeek] = useState<number | null>(oldRecurrenceRule?.nthWeek ?? null); // if monthly 
+    const [ends, setEnds] = useState(oldRecurrenceRule?.ends ?? "never");
+    const [endDate, setEndDate] = useState<Dayjs | null>(oldRecurrenceRule?.endDate ?? null);
+    const [occurrences, setOccurrences] = useState<number>(oldRecurrenceRule?.occurrences ?? 13);
 
     const recurrenceOptions = useMemo(() => {
         if (!date) return [];
@@ -107,6 +111,13 @@ export default function ModalEventUpdate({ show, onClose, oldEventInfo, savedEve
         ];
       }, [date, customRecurrenceSummary]);
 
+    const toggleDay = (index: number) => {
+      setSelectedDays((prev) =>
+        prev.includes(index)
+          ? prev.filter((d) => d !== index)
+          : [...prev, index]
+      );
+    };
 
     const [dateError, setDateError] = useState(false);
     const [startError, setStartError] = useState(false);
@@ -148,6 +159,44 @@ export default function ModalEventUpdate({ show, onClose, oldEventInfo, savedEve
     // if (!eventInfo || !currentCategory) return null;
 
 
+    useEffect(() => {
+      console.log("👨‍🚀USE Effect for setting summary according to old recurrence rule", oldRecurrenceRule)
+      if (repeat=="custom" && oldRecurrenceRule) {
+        const { summary } = formatRecurrence(oldRecurrenceRule);
+        setCustomRecurrenceSummary(summary);
+      } else {
+        setCustomRecurrenceSummary(null);
+      }
+    // }, [oldRecurrenceRule,
+    }, [repeat,
+      interval, frequency, selectedDays, nthWeek, ends, endDate, occurrences
+    ]);
+
+    const onCustomRecurrenceClose = () => {
+        if (!date) {
+          setDateError(true);
+          return;
+        }
+
+        const current: RecurrenceInput = {
+          frequency: toRRuleFrequency(frequency),
+          interval,
+          selectedDays,
+          ends: toDBRecurrenceEnds(ends),
+          endDate,
+          occurrences,
+          startDatetime: date ?? dayjs(), // fallback
+          eventId: -1, // placeholder
+          nthWeek
+        };
+
+        const { dbRecurrence, summary } = formatRecurrence(current);
+        setCustomRecurrenceSummary(summary);
+
+        setShowCustomRecurrence(false);
+      };
+
+    // reset back to original event info
     const reset = () => {
         setTitle(oldEventInfo.title || "");
         setLocation(oldEventInfo.location || "");
@@ -155,15 +204,27 @@ export default function ModalEventUpdate({ show, onClose, oldEventInfo, savedEve
         setSourceURL(oldEventInfo?.source_url || "");
         setDescription(oldEventInfo.description || "");
 
+        setTimezone(Intl.DateTimeFormat().resolvedOptions().timeZone);
         const start_datetime = dayjs(oldEventInfo.start_datetime);
         setDate(start_datetime);
         setStartTime(start_datetime);
         const end_datetime = dayjs(oldEventInfo.end_datetime);
         setEndTime(end_datetime);
+        setAllDay(oldEventInfo.is_all_day || false);
+
+        setRepeat(oldRepeat || "none");
+        setInterval(oldRecurrenceRule?.interval ?? 1); // every X unit-of-time
+        setFrequency(oldRecurrenceRule?.frequency ?? "WEEKLY"); // default to weekly
+        setSelectedDays(oldRecurrenceRule?.selectedDays ?? [1, 2, 3, 4, 5]); // default to M-F
+        setNthWeek(oldRecurrenceRule?.nthWeek ?? null); // if monthly 
+        setEnds(oldRecurrenceRule?.ends ?? "never");
+        setEndDate(oldRecurrenceRule?.endDate ?? null);
+        setOccurrences(oldRecurrenceRule?.occurrences ?? 13);
     }
 
     const validate = () => {
         // TODO
+        // TODO: sth about the error states
         return true;
     }
 
@@ -189,6 +250,98 @@ export default function ModalEventUpdate({ show, onClose, oldEventInfo, savedEve
             .set('second', endTime.second())
 
 
+
+
+
+
+        let updated_recurrence, recurrence_data;
+
+
+        // add the recurrence settings
+        if (repeat !== "none") {
+          updated_recurrence = "RECURRING";
+
+          let recurrenceInput: RecurrenceInput;
+
+          if (repeat === "custom") {
+            // Use current state values
+            recurrenceInput = {
+              frequency: toRRuleFrequency(frequency),
+              interval,
+              selectedDays,
+              ends: toDBRecurrenceEnds(ends),
+              endDate: endDate ? dayjs(endDate).endOf('day').utc() : null,
+              occurrences,
+              startDatetime: combinedStartDT ? dayjs(combinedStartDT) : dayjs(),
+              eventId: -1,
+              nthWeek
+            };
+          } else {
+            // Use computed local values for predefined repeat patterns
+            if (!date) throw new Error("Date is not defined");
+
+            let localFrequency: RecurrenceInput["frequency"] = "DAILY";
+            let localSelectedDays: number[] = [];
+            let localNthWeek: number | null = null;
+            let localInterval = 1;
+
+            if (repeat === "daily") {
+              localFrequency = "DAILY";
+              localSelectedDays = [0, 1, 2, 3, 4, 5, 6];
+            } else if (repeat === "weekly") {
+              localFrequency = "WEEKLY";
+              localSelectedDays = [date.day()];
+            } else if (repeat === "monthly_nth") {
+              localFrequency = "MONTHLY";
+              localSelectedDays = [date.day()];
+              localNthWeek = getNthDayOfWeekInMonth(date);
+            } else if (repeat === "monthly_last") {
+              localFrequency = "MONTHLY";
+              localSelectedDays = [date.day()];
+              localNthWeek = -1;
+            } else if (repeat === "yearly") {
+              localFrequency = "YEARLY";
+            } else if (repeat === "weekdays") {
+              localFrequency = "WEEKLY";
+              localSelectedDays = [1, 2, 3, 4, 5];
+            }
+
+            recurrenceInput = {
+              frequency: localFrequency,
+              interval: localInterval,
+              selectedDays: localSelectedDays,
+              ends: "never",
+              endDate: null,
+              occurrences: 0,
+              startDatetime: combinedStartDT ? dayjs(combinedStartDT) : dayjs(),
+              eventId: -1,
+              nthWeek: localNthWeek
+            };
+          }
+
+          const { dbRecurrence, summary } = formatRecurrence(recurrenceInput);
+          console.log("Recurrence settings:", dbRecurrence, summary);
+
+          recurrence_data = dbRecurrence;
+          setCustomRecurrenceSummary(summary);
+
+          // call endpoint to create a recurring event
+        } else {
+          updated_recurrence = "ONETIME";
+          // call endpoint to create a one-time event
+        }
+
+
+
+
+
+
+
+
+
+
+
+
         const updatedEventData = {
           updated_event: {
             id: oldEventInfo.id,
@@ -205,25 +358,28 @@ export default function ModalEventUpdate({ show, onClose, oldEventInfo, savedEve
             user_is_admin: oldEventInfo.user_is_admin,
           },
           updated_tags: selectedTags,
-          updated_recurrence: {
+          updated_recurrence: updated_recurrence, // RECURRING vs ONETIME
+          recurrence_data: recurrence_data, // the actual recurrence data (frequency, interval, etc.)
 
-          },
           updated_child: {
-
+            // huh why didnt i write any comments now im confused what this one is
           },
-          update_scope: "all" // TODO: later will add an option to edit specific instances
-
+          update_scope: "all", // TODO: later will add an option to edit specific instances
+          clerk_id: user?.id || null,
 
         }
         try {
             // will need to update later to include in events.ts
-            const res = await axios.patch(`${API_BASE_URL}/events/${oldEventInfo.id}`, 
-                updatedEventData
+            const res = await axios.put(`${API_BASE_URL}/events/${oldEventInfo.id}`, 
+                updatedEventData, 
+                {headers: { "Content-Type": "application/json" }}
             );
+            console.log("🍵 PUT requestd", updatedEventData)
         } catch (err) {
             console.error("Error updating event: ", oldEventInfo.id, err);
         }
-        openDetails(oldEventInfo.id, updatedEventData.updated_event)
+        openDetails(oldEventInfo.id, oldEventInfo.event_id, updatedEventData.updated_event)
+        
         return;
     }
 
@@ -532,12 +688,31 @@ export default function ModalEventUpdate({ show, onClose, oldEventInfo, savedEve
                 }}
             />
 
+            {/* Custom Recurrence Modal */}
+            {showCustomRecurrence && (
+              <CustomRecurrenceModal
+                open={showCustomRecurrence}
+                onClose={onCustomRecurrenceClose}
+                interval={interval}
+                setInterval={setInterval}
+                frequency={frequency}
+                setFrequency={setFrequency}
+                selectedDays={selectedDays}
+                toggleDay={toggleDay}
+                ends={ends}
+                setEnds={setEnds}
+                endDate={endDate}
+                setEndDate={setEndDate}
+                occurrences={occurrences}
+                setOccurrences={setOccurrences}
+              />
+            )}
 
             {/* Buttons */}
             <div className="flex justify-end gap-4">
                 <button
                 className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600"
-                onClick={() => openDetails(oldEventInfo.id, oldEventInfo)}
+                onClick={() => openDetails(oldEventInfo.id, oldEventInfo.event_id, oldEventInfo)}
                 >
                 Return to details
                 </button>

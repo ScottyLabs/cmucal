@@ -26,9 +26,10 @@ type Props = {
 };
 
 const Calendar: FC<Props> = ({ events }) => {
+  const { user } = useUser();
   // Define state with EventInput type
   const { gcalEvents } = useGcalEvents();
-  const { modalView, openDetails } = useEventState();
+  const { modalView, openDetails, getOccurrenceFromGCalEvent, optimisticOverrides } = useEventState();
 
   const mergedEventsMap = new Map<string, EventInput>();
 
@@ -48,18 +49,49 @@ const Calendar: FC<Props> = ({ events }) => {
     mergedEventsMap.set(key, event);
   });
 
-  const mergedEvents = Array.from(mergedEventsMap.values());
+  
+  // 3. optimistic overrides (highest priority)
+  optimisticOverrides.forEach((event, id) => {
+    mergedEventsMap.set(id, event);
+  });
 
+  const mergedEvents = Array.from(mergedEventsMap.values());
+  const calendarKey = mergedEvents.map(e => e.id).sort().join(",");
 
   console.log("Merged Events:", mergedEvents);
 
   const handleEventClick = async (info: EventClickArg) => {
-    console.log(info.event);
-    console.log(info.event.extendedProps);
+    
+    let eventInfo: EventType;
+    
+    console.log("🍵", info.event);
+    const source = info.event.extendedProps.cal_source;
+    console.log(info.event._def.title, info.event._instance?.range.start, info.event._instance?.range.end, "😮", source);
     console.log("clicked event id:", info.event.extendedProps.event_id);
-    // setEventId(info.event.extendedProps.event_id)
-    openDetails(Number(info.event.id));
-    openDetails(info.event.extendedProps.event_id);
+
+
+    if (source == "cmucal") {
+      const occurrenceId = await getOccurrenceFromGCalEvent({
+        googleEventId: info.event.extendedProps.gcalEventId,
+        startTime: info.event.start?.toISOString() || "",
+        userId: user?.id ?? "-1",
+      });
+      if (!occurrenceId) return;
+      openDetails(Number(occurrenceId));
+    } else { // source == "gcal"
+      eventInfo = {
+        title: info.event._def.title,
+        start_datetime: info.event._instance?.range.start.toISOString() ||"", 
+        end_datetime: info.event._instance?.range.end.toISOString() ||"",
+        id: -1, 
+        is_all_day: false, // TODO: these are currently just placeholders, need to edit the google api to fetch more info later
+        location: "random location",
+        org_id: "6004", // cmucal org lol - do we need a dummy org and category
+        category_id: "22", // cmucal dev
+      };
+      openDetails(info.event.extendedProps.event_id, undefined, undefined, eventInfo);
+    }
+        
     console.log("modal:", modalView)
   };
 
@@ -74,6 +106,7 @@ const Calendar: FC<Props> = ({ events }) => {
           right: "dayGridMonth,timeGridWeek,timeGridDay",
         }}
         // events={events}
+        key={calendarKey}
         events={mergedEvents}
         editable={true}
         selectable={true}
