@@ -2,10 +2,11 @@ import "~/styles/globals.css";
 import { Inter, Geist_Mono } from 'next/font/google';
 
 import { ClerkProvider } from '@clerk/nextjs';
-import { Metadata } from "next";
+import type { Metadata } from "next";
 import ThemeProvider from "@components/ThemeProvider";
 import Navbar from "@components/Navbar";
 import SignedOutNav from "@components/SignedOutNav";
+import BottomNav from "@components/BottomNav";
 import Welcome from "@components/Welcome";
 import { SignedIn, SignedOut } from "@clerk/nextjs";
 import { GcalEventsProvider } from "../context/GCalEventsContext";
@@ -44,18 +45,21 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
   return (
     <ClerkProvider>
-      <html lang="en">
-        <body className={`${inter.variable} ${geistMono.variable} font-sans antialiased dark:bg-gray-800`}>
+      <html lang="en" className="h-full">
+        <body className={`${inter.variable} ${geistMono.variable} font-sans antialiased dark:bg-gray-800 h-full`}>
           <GcalEventsProvider>
             <EventStateProvider>
               <UserProvider>
                 <ThemeProvider>
                   <SignedIn>
-                    <Navbar />
-                    <main>
-                      <ModalRender/>
-                      {children}
-                    </main>
+                    <div className="flex flex-col h-full">
+                      <Navbar />
+                      <main className="flex-1 overflow-auto">
+                        <ModalRender/>
+                        {children}
+                      </main>
+                      <BottomNav />
+                    </div>
                   </SignedIn>
                   <SignedOut>
                     <SignedOutNav />

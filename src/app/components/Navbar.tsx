@@ -4,11 +4,12 @@ import { usePathname } from "next/navigation"; // Detects the current path
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { FiSearch, FiMoon, FiSun, FiLogOut, FiTrash2 } from "react-icons/fi"; // Search, dark mode, logout
+import { FiSearch, FiMoon, FiSun, FiLogOut, FiTrash2, FiMenu } from "react-icons/fi"; // Search, dark mode, logout
 import { FaRegUser } from "react-icons/fa"; // User icon
 import { BsCalendar3 } from "react-icons/bs"; // Calendar icon
 import { GrUserManager } from "react-icons/gr"; // Manager icon
 import { FiUpload } from "react-icons/fi";
+import { useIsMobile } from "../hooks/useIsMobile";
 import { useRouter } from "next/navigation";
 
 import { useEventState } from "../../context/EventStateContext";
@@ -48,6 +49,7 @@ export default function Navbar() {
   const [newScheduleName, setNewScheduleName] = useState('');
   const [userRole, setUserRole] = useState<string | null>(null);
   const [isCreatingSchedule, setIsCreatingSchedule] = useState(false);
+  const isMobile = useIsMobile();
 
   const { user } = useClerkUser();  // clerk user object
   const router = useRouter();
@@ -226,17 +228,31 @@ export default function Navbar() {
 
   return (
     <>
-      <nav className="flex sticky top-0 z-50 items-center justify-between px-4 py-3 border-b border-b-gray-300 dark:border-b-gray-600 bg-white dark:bg-gray-800 shadow-md dark:shadow-lg">
-        {/* Left Section: Title + Segmented Selector + Schedule Dropdown */}
+      <nav className="flex items-center justify-between px-4 py-3 border-b border-b-gray-300 dark:border-b-gray-600 bg-white dark:bg-gray-800 shadow-md dark:shadow-lg">
+        {/* Left Section */}
         <div className="flex items-center gap-3">
+          {/* Mobile Hamburger Menu */}
+          {isMobile && (
+            <button
+              onClick={() => {
+                // This will be handled by the drawer in the page component
+                window.dispatchEvent(new CustomEvent('toggleMobileSidebar'));
+              }}
+              className="flex items-center justify-center w-10 h-10 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            >
+              <FiMenu className="text-gray-600 dark:text-gray-300" size={24} />
+            </button>
+          )}
+          
           {/* CMUCal Title */}
           <Link href="/" className="flex items-center gap-1 mr-2">
             <img src="/newLogo.png" alt="CMUCal Logo" className="w-10 h-10 object-contain" />
             <h1 className="text-xl font-semibold text-gray-800 dark:text-white">CMUCal</h1>
           </Link>
           
-          {/* Segmented Selector for Home/Explore */}
-          <div className="h-10 flex items-center border border-gray-300 rounded-lg bg-white dark:bg-gray-700 dark:border-gray-600 overflow-hidden">
+          {/* Segmented Selector for Home/Explore - Desktop only */}
+          {!isMobile && (
+            <div className="h-10 flex items-center border border-gray-300 rounded-lg bg-white dark:bg-gray-700 dark:border-gray-600 overflow-hidden">
             <Link href="/" className="flex-1">
               <div
                 className={`flex items-center justify-center h-10 px-3 cursor-pointer transition-colors
@@ -260,10 +276,12 @@ export default function Navbar() {
                 <FiSearch className="w-5 h-5 text-gray-700 dark:text-gray-300" size={20} />
               </div>
             </Link>
-          </div>
+            </div>
+          )}
 
-          {/* Schedule Selector - Button or Dropdown */}
-          <div className="relative">
+          {/* Schedule Selector - Button or Dropdown - Desktop only */}
+          {!isMobile && (
+            <div className="relative">
             {isLoading ? (
               // Show skeleton while loading
               <div className="h-10 px-4 py-2 border border-gray-300 rounded-lg bg-gray-100 dark:bg-gray-700 dark:border-gray-600 animate-pulse flex items-center gap-2">
@@ -394,7 +412,8 @@ export default function Navbar() {
                 </div>
               </div>
             )}
-          </div>
+            </div>
+          )}
         </div>
 
         {/* Center Section: Search Bar */}
@@ -402,31 +421,113 @@ export default function Navbar() {
         <div className="flex-1 max-w-2xl mx-4">
         </div>
 
-        {/* Right Section: Upload, Connect Google, Dark Mode, User Button */}
+        {/* Right Section */}
         <div className="flex items-center gap-1">
-          <div className="mx-2">
-          {user?.id && <ConnectGoogleButton clerkId={user.id} />}
-          </div>
-          {/* Upload Button */}
+          {/* Mobile: Schedule Selector */}
+          {isMobile && (
+            <div className="relative mr-2">
+              {isLoading ? (
+                <div className="h-8 w-8 bg-gray-100 dark:bg-gray-700 rounded animate-pulse"></div>
+              ) : schedules.length === 0 ? (
+                <button
+                  onClick={() => setShowNewScheduleInput(true)}
+                  className="h-8 px-2 text-xs font-medium border border-gray-300 rounded-lg bg-white dark:bg-gray-700 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors flex items-center gap-1"
+                >
+                  <BsCalendar3 className="text-gray-600 dark:text-gray-300" size={14} />
+                </button>
+              ) : (
+                <FormControl size="small">
+                  <Select
+                    value={currentScheduleId ? String(currentScheduleId) : ''}
+                    onChange={handleScheduleChange}
+                    displayEmpty
+                    renderValue={() => (
+                      <div className="flex items-center">
+                        <BsCalendar3 className="text-gray-600 dark:text-white" size={14} />
+                      </div>
+                    )}
+                    sx={{
+                      border: "1px solid #D1D5DB",
+                      borderRadius: "8px",
+                      '& .MuiOutlinedInput-notchedOutline': {
+                        border: "none",
+                      },
+                      height: "32px",
+                      minWidth: "40px",
+                      backgroundColor: "white",
+                      '.dark &': {
+                        backgroundColor: "#374151",
+                        border: "1px solid #4D5461",
+                      }
+                    }}
+                  >
+                    {schedules.map((schedule) => (
+                      <MenuItem 
+                        key={schedule.id} 
+                        value={String(schedule.id)}
+                        sx={{
+                          '& .delete-icon': {
+                            opacity: 0,
+                          },
+                          '&:hover .delete-icon': {
+                            opacity: 1,
+                          }
+                        }}
+                      >
+                        <div className="flex items-center justify-between w-full gap-2">
+                          <div className="flex items-center gap-2">
+                            <BsCalendar3 className="text-gray-600 dark:text-white" size={16} />
+                            <span className="text-sm text-gray-800 dark:text-white">{schedule.name}</span>
+                          </div>
+                          <button
+                            className="delete-icon transition-opacity"
+                            onClick={(e) => handleDeleteSchedule(schedule.id, schedule.name, e)}
+                          >
+                            <FiTrash2 className="text-gray-400 hover:text-red-500" size={16} />
+                          </button>
+                        </div>
+                      </MenuItem>
+                    ))}
+                    <MenuItem value="new">
+                      <div className="flex items-center gap-2 text-blue-500">
+                        <span className="text-sm">+ Create New Schedule</span>
+                      </div>
+                    </MenuItem>
+                  </Select>
+                </FormControl>
+              )}
+            </div>
+          )}
+          
+          {/* Desktop: Connect Google, Upload, Dark Mode */}
+          {!isMobile && (
+            <>
+              <div className="mx-2">
+                {user?.id && <ConnectGoogleButton clerkId={user.id} />}
+              </div>
+              {/* Dark Mode Toggle */}
+              {mounted && (
+                <button
+                  onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                  className="flex items-center justify-center w-10 h-10 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                >
+                  {theme === "dark" ? (
+                    <FiSun className="text-yellow-400" size={20} />
+                  ) : (
+                    <FiMoon className="text-gray-600 dark:text-white" size={20} />
+                  )}
+                </button>
+              )}
+            </>
+          )}
+          
+          {/* Upload Button - Both mobile and desktop */}
           <button
             onClick={() => openPreUpload()}
             className="flex items-center justify-center w-10 h-10 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
           >
             <FiUpload className="text-gray-600 dark:text-gray-300" size={20} />
           </button>
-          {/* Dark Mode Toggle */}
-          {mounted && (
-            <button
-              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-              className="flex items-center justify-center w-10 h-10 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-            >
-              {theme === "dark" ? (
-                <FiSun className="text-yellow-400" size={20} />
-              ) : (
-                <FiMoon className="text-gray-600 dark:text-white" size={20} />
-              )}
-            </button>
-          )}
           
           {/* User Button */}
           <div className="mx-2 flex flex-col justify-end"> 
