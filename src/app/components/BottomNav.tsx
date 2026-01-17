@@ -17,14 +17,14 @@ export default function BottomNav() {
             <div
               className={`flex items-center justify-center w-12 h-12 rounded-lg transition-colors ${
                 pathname === "/"
-                  ? "bg-blue-100 dark:bg-blue-900"
+                  ? "bg-gray-200 dark:bg-gray-700"
                   : "hover:bg-gray-100 dark:hover:bg-gray-700"
               }`}
             >
               <FaRegUser
                 className={`${
                   pathname === "/"
-                    ? "text-blue-600 dark:text-blue-400"
+                    ? "text-gray-800 dark:text-gray-100"
                     : "text-gray-600 dark:text-gray-300"
                 }`}
                 size={22}
@@ -39,14 +39,14 @@ export default function BottomNav() {
             <div
               className={`flex items-center justify-center w-12 h-12 rounded-lg transition-colors ${
                 pathname === "/explore"
-                  ? "bg-blue-100 dark:bg-blue-900"
+                  ? "bg-gray-200 dark:bg-gray-700"
                   : "hover:bg-gray-100 dark:hover:bg-gray-700"
               }`}
             >
               <FiSearch
                 className={`${
                   pathname === "/explore"
-                    ? "text-blue-600 dark:text-blue-400"
+                    ? "text-gray-800 dark:text-gray-100"
                     : "text-gray-600 dark:text-gray-300"
                 }`}
                 size={22}
