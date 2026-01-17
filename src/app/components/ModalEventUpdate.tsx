@@ -190,6 +190,7 @@ export default function ModalEventUpdate({ show, onClose, oldEventInfo, savedEve
             start_datetime: combinedStartDT.toISOString(),
             end_datetime: combinedEndDT.toISOString(),
             is_all_day: oldEventInfo.is_all_day, // TODO: needa edit
+            event_timezone: timezone,
             location: location,
             org_id: oldEventInfo.org_id, // TODO: needa edit
             category_id: oldEventInfo.category_id, // TODO: needa edit

@@ -97,6 +97,7 @@ export interface EventPayloadType {
   start_datetime?: string | null;
   end_datetime?: string | null;
   is_all_day?: boolean;
+  event_timezone: string;
   location: string;
   source_url?: string;
   event_type: string;
