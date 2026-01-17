@@ -7,6 +7,7 @@ import { useUser } from "~/context/UserContext";
 import { FiSearch } from "react-icons/fi";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import { useTheme } from "next-themes";
 
 import { EventClickArg } from "@fullcalendar/core"; 
 import { EventType } from "../types/EventType";
@@ -59,6 +60,7 @@ function SkeletonEventCard() {
 export default function SearchResultsSidebar({ events, setEvents }: Props) {
   const { user } = useClerkUser();
   const { allEvents: globalEvents, eventsLoading: globalEventsLoading, refetchEvents } = useUser();
+  const { theme } = useTheme();
   const [allTags, setAllTags] = useState<{id: number; name: string}[]>([]);
   const [selectedTags, setSelectedTags] = useState<OptionType[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -192,10 +194,10 @@ export default function SearchResultsSidebar({ events, setEvents }: Props) {
                 minHeight: '40px',
                 height: '40px',
                 borderRadius: '8px',
-                border: '1px solid #D1D5DB',
-                backgroundColor: 'white',
+                border: theme === 'dark' ? '1px solid #4D5461' : '1px solid #D1D5DB',
+                backgroundColor: theme === 'dark' ? '#374151' : 'white',
                 '&:hover': {
-                  backgroundColor: '#f9fafb',
+                  backgroundColor: theme === 'dark' ? '#4b5563' : '#f9fafb',
                 },
               }),
               valueContainer: (base) => ({
@@ -206,13 +208,52 @@ export default function SearchResultsSidebar({ events, setEvents }: Props) {
               input: (base) => ({
                 ...base,
                 margin: '0px',
+                color: theme === 'dark' ? '#ffffff' : '#1f2937',
               }),
               indicatorsContainer: (base) => ({
                 ...base,
                 height: '40px',
               }),
+              placeholder: (base) => ({
+                ...base,
+                color: theme === 'dark' ? '#9ca3af' : '#6b7280',
+              }),
+              singleValue: (base) => ({
+                ...base,
+                color: theme === 'dark' ? '#ffffff' : '#1f2937',
+              }),
+              multiValue: (base) => ({
+                ...base,
+                backgroundColor: theme === 'dark' ? '#4b5563' : '#e5e7eb',
+              }),
+              multiValueLabel: (base) => ({
+                ...base,
+                color: theme === 'dark' ? '#ffffff' : '#1f2937',
+              }),
+              multiValueRemove: (base) => ({
+                ...base,
+                color: theme === 'dark' ? '#9ca3af' : '#6b7280',
+                '&:hover': {
+                  backgroundColor: theme === 'dark' ? '#6b7280' : '#d1d5db',
+                  color: theme === 'dark' ? '#ffffff' : '#1f2937',
+                },
+              }),
+              menu: (base) => ({
+                ...base,
+                backgroundColor: theme === 'dark' ? '#374151' : 'white',
+                border: theme === 'dark' ? '1px solid #4D5461' : '1px solid #D1D5DB',
+              }),
+              option: (base, state) => ({
+                ...base,
+                backgroundColor: state.isFocused 
+                  ? (theme === 'dark' ? '#4b5563' : '#f5f5f5')
+                  : (theme === 'dark' ? '#374151' : 'white'),
+                color: theme === 'dark' ? '#ffffff' : '#1f2937',
+                '&:active': {
+                  backgroundColor: theme === 'dark' ? '#6b7280' : '#e5e7eb',
+                },
+              }),
             }}
-            className="dark:bg-gray-700"
           />
         </div>
         <div className="flex-1">
@@ -259,7 +300,7 @@ export default function SearchResultsSidebar({ events, setEvents }: Props) {
             </button>
             <button
               onClick={() => openDetails(event.id)}
-              className="mt-2 mx-2 px-3 py-1.5 rounded-lg bg-gray-200">
+              className="mt-2 mx-2 px-3 py-1.5 rounded-lg bg-gray-200 dark:bg-gray-700 dark:text-white hover:bg-gray-300 dark:hover:bg-gray-600">
               Learn more
             </button>
           </li>

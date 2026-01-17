@@ -21,8 +21,11 @@
     "noEmit": true,
     "module": "ESNext",
     "moduleResolution": "Bundler",
-    "types": ["vitest/globals", "@testing-library/jest-dom"],
-    "jsx": "react-jsx",
+    "types": [
+      "vitest/globals",
+      "@testing-library/jest-dom"
+    ],
+    "jsx": "preserve",
     "plugins": [
       {
         "name": "next"

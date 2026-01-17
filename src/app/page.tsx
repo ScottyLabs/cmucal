@@ -2,11 +2,13 @@
 
 import { useEffect } from "react";
 import TwoColumnLayout from "@components/TwoColumnLayout";
-import { EventInput } from "@fullcalendar/core";
+import type { EventInput } from "@fullcalendar/core";
 import ProfileSidebar from "./components/ProfileSidebar";
 import Calendar from "./components/Calendar";
+import MobileSidebarDrawer from "./components/MobileSidebarDrawer";
 import { useEventState } from "~/context/EventStateContext";
 import { useUser } from "~/context/UserContext";
+import { useIsMobile } from "./hooks/useIsMobile";
 
 /**
  * Profile page with personalized calendar view
@@ -17,11 +19,11 @@ export default function Home() {
     courses, 
     clubs, 
     loading, 
-    currentScheduleId, 
-    fetchSchedule,
+    currentScheduleId,
     visibleCategories,
     toggleCategoryVisibility
   } = useUser();
+  const isMobile = useIsMobile();
 
   const handleEventToggle = (categoryId: number, _isVisible: boolean) => {
     toggleCategoryVisibility(categoryId);
@@ -33,7 +35,7 @@ export default function Home() {
     courses.forEach(course => {
       course.categories.forEach(category => {
         if (visibleCategories.has(category.id)) {
-          const categoryEvents = course.events[category.name] || [];
+          const categoryEvents = course.events[category.name] ?? [];
           categoryEvents.forEach((event) => {
             // if (event.title === "15210 A") {
             //   console.log("Adding event to calendar:", event.title, event.start_datetime);
@@ -48,7 +50,7 @@ export default function Home() {
               borderColor: "#f87171",
               classNames: ["temp-course-event"],
               extendedProps: { location: event.location, description: event.description, source_url: event.source_url,
-                             event_id: event.event_id || event.id, // event_id for occurrences, id for non-recurring}
+                             event_id: event.event_id ?? event.id, // event_id for occurrences, id for non-recurring}
               }
             });
           });
@@ -59,7 +61,7 @@ export default function Home() {
     clubs.forEach(club => {
       club.categories.forEach(category => {
         if (visibleCategories.has(category.id)) {
-          const categoryEvents = club.events[category.name] || [];
+          const categoryEvents = club.events[category.name] ?? [];
           categoryEvents.forEach((event) => {
             newCalendarEvents.push({
               id: event.id.toString(),
@@ -71,7 +73,7 @@ export default function Home() {
               borderColor: "#4ade80",
               classNames: ["temp-club-event"],
               extendedProps: { location: event.location, description: event.description, source_url: event.source_url,
-                             event_id: event.event_id || event.id, // event_id for occurrences, id for non-recurring}
+                             event_id: event.event_id ?? event.id, // event_id for occurrences, id for non-recurring}
               }
             });
           });
@@ -86,21 +88,38 @@ export default function Home() {
     return <div className="p-4">Loading your schedule...</div>;
   }
 
-  return (
-    <div className="flex h-[calc(100vh-65px)]">
-    <TwoColumnLayout 
-      leftContent={
-        <ProfileSidebar 
-          courses={courses} 
-          clubs={clubs} 
-          onCategoryToggle={handleEventToggle}
-          currentScheduleId={currentScheduleId ? Number(currentScheduleId) : undefined}
-          visibleCategories={visibleCategories}
-        />
-      } 
-      // rightContent={<Calendar events={calendarEvents} setEvents={setCalendarEvents} setEventId={() => {}}/>} 
-      rightContent={<Calendar events={calendarEvents} />} 
+  const sidebarContent = (
+    <ProfileSidebar 
+      courses={courses} 
+      clubs={clubs} 
+      onCategoryToggle={handleEventToggle}
+      currentScheduleId={currentScheduleId ? Number(currentScheduleId) : undefined}
+      visibleCategories={visibleCategories}
     />
-    </div>
+  );
+
+  return (
+    <>
+      {isMobile && (
+        <MobileSidebarDrawer>
+          {sidebarContent}
+        </MobileSidebarDrawer>
+      )}
+      
+      <div className="flex h-full">
+        {isMobile ? (
+          // Mobile: Only show calendar, sidebar is in drawer
+          <div className="w-full">
+            <Calendar events={calendarEvents} />
+          </div>
+        ) : (
+          // Desktop: Show two-column layout
+          <TwoColumnLayout 
+            leftContent={sidebarContent}
+            rightContent={<Calendar events={calendarEvents} />} 
+          />
+        )}
+      </div>
+    </>
   );
 }
