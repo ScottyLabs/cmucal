@@ -80,6 +80,9 @@ export default function Home() {
         if (visibleCategories.has(category.id)) {
           const categoryEvents = course.events[category.name] || [];
           categoryEvents.forEach((event) => {
+            // if (event.title === "15210 A") {
+            //   console.log("Adding event to calendar:", event.title, event.start_datetime);
+            // }
             newCalendarEvents.push({
               id: event.id.toString(),
               title: event.title,
