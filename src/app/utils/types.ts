@@ -257,6 +257,7 @@ export interface ClubOrganization {
 export type CoursesClubsResponse = {
   courses: Course[];
   clubs: Club[];
+  schedule_id?: number;
 };
 
 export interface TagType {

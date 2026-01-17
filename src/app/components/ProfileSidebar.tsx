@@ -1,30 +1,29 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { FiChevronUp, FiChevronDown, FiEye, FiEdit3, FiSearch } from "react-icons/fi";
 import Accordion from "./Accordion";
 import ToggleItem from "./ToggleItem";
 import { Course, Club, ClubOrganization, CourseOption } from "../utils/types";
 import { getClubOrganizations, addOrgToSchedule, removeOrgFromSchedule, getCourseOrgs } from "../utils/api/organizations";
+import { useUser } from "~/context/UserContext";
 
 interface ProfileSidebarProps {
   courses: Course[];
   clubs: Club[];
-  onRemoveCategory: (categoryId: number) => void;
   onCategoryToggle?: (categoryId: number, isVisible: boolean) => void;
   currentScheduleId?: number;
-  onScheduleUpdate?: () => void;
+  visibleCategories?: Set<number>;
 }
 
 const ProfileSidebar: React.FC<ProfileSidebarProps> = ({ 
   courses, 
   clubs, 
-  onRemoveCategory,
   onCategoryToggle,
   currentScheduleId,
-  onScheduleUpdate
+  visibleCategories
 }) => {
-  const [toggledCategories, setToggledCategories] = useState<Record<number, boolean>>({});
+  const { addOrganization, removeOrganization } = useUser();
   const [isCoursesOpen, setIsCoursesOpen] = useState(true);
   const [isCoursesEditMode, setIsCoursesEditMode] = useState(false);
   const [isClubsOpen, setIsClubsOpen] = useState(true);
@@ -35,10 +34,7 @@ const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
   const [loadingCourses, setLoadingCourses] = useState(false);
   const [courseSearchTerm, setCourseSearchTerm] = useState("");
   const [clubSearchTerm, setClubSearchTerm] = useState("");
-
-  const handleToggle = (categoryId: number) => {
-    setToggledCategories(prev => ({...prev, [categoryId]: !prev[categoryId]}));
-  };
+  const [addingOrgId, setAddingOrgId] = useState<number | null>(null);
 
   // Fetch available clubs
   const fetchClubs = async () => {
@@ -66,87 +62,132 @@ const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
     }
   };
 
+  // Lazy load available orgs on mount
+  useEffect(() => {
+    void fetchClubs();
+    void fetchCourses();
+  }, []);
+
   const handleAddClub = async (clubId: number) => {
-    console.log('handleAddClub called with clubId:', clubId, 'currentScheduleId:', currentScheduleId);
     if (!currentScheduleId) {
-      console.error('No schedule selected. Please select a schedule first.');
       alert('Please select a schedule before adding clubs.');
       return;
     }
     
+    setAddingOrgId(clubId);
     try {
-      console.log('Calling addOrgToSchedule with:', currentScheduleId, clubId);
+      // First, add to backend schedule
       await addOrgToSchedule(currentScheduleId, clubId);
-      console.log('Successfully added club to schedule');
+      
+      // Only update UI state after backend succeeds
+      const orgData = await addOrganization(clubId);
+      
+      // Enable all categories for the newly added org
+      if (orgData?.categories) {
+        orgData.categories.forEach(category => {
+          onCategoryToggle?.(category.id, true);
+        });
+      }
+      
       setIsClubsEditMode(false);
-      onScheduleUpdate?.();
     } catch (error) {
       console.error('Failed to add club to schedule:', error);
       alert('Failed to add club to schedule. Please try again.');
-      onScheduleUpdate?.();
+      // No need to rollback since we didn't update UI state yet
+    } finally {
+      setAddingOrgId(null);
     }
   };
 
   const handleRemoveClub = async (clubId: number) => {
-    console.log('handleRemoveClub called with clubId:', clubId, 'currentScheduleId:', currentScheduleId);
     if (!currentScheduleId) {
-      console.error('No schedule selected. Please select a schedule first.');
       alert('Please select a schedule before removing clubs.');
       return;
     }
     
+    // Store the club data for potential rollback
+    const clubToRemove = clubs.find(c => c.org_id === clubId);
+    
     try {
-      console.log('Calling removeOrgFromSchedule with:', currentScheduleId, clubId);
+      // Optimistically update UI
+      removeOrganization(clubId);
+      
+      // Attempt backend removal
       await removeOrgFromSchedule(currentScheduleId, clubId);
-      console.log('Successfully removed club from schedule');
+      
       setIsClubsEditMode(false);
-      onScheduleUpdate?.();
     } catch (error) {
       console.error('Failed to remove club from schedule:', error);
       alert('Failed to remove club from schedule. Please try again.');
-      onScheduleUpdate?.();
+      
+      // Rollback: re-add the club to UI state
+      if (clubToRemove) {
+        addOrganization(clubId).catch(err => {
+          console.error('Failed to rollback club removal:', err);
+        });
+      }
     }
   };
 
   const handleAddCourse = async (courseId: string) => {
-    console.log('handleAddCourse called with courseId:', courseId, 'currentScheduleId:', currentScheduleId);
     if (!currentScheduleId) {
-      console.error('No schedule selected. Please select a schedule first.');
       alert('Please select a schedule before adding courses.');
       return;
     }
     
+    const orgId = parseInt(courseId);
+    setAddingOrgId(orgId);
     try {
-      console.log('Calling addOrgToSchedule with:', currentScheduleId, courseId);
-      await addOrgToSchedule(currentScheduleId, parseInt(courseId));
-      console.log('Successfully added course to schedule');
+      // First, add to backend schedule
+      await addOrgToSchedule(currentScheduleId, orgId);
+      
+      // Only update UI state after backend succeeds
+      const orgData = await addOrganization(orgId);
+      
+      // Enable all categories for the newly added org
+      if (orgData?.categories) {
+        orgData.categories.forEach(category => {
+          onCategoryToggle?.(category.id, true);
+        });
+      }
+      
       setIsCoursesEditMode(false);
-      onScheduleUpdate?.();
     } catch (error) {
       console.error('Failed to add course to schedule:', error);
       alert('Failed to add course to schedule. Please try again.');
-      onScheduleUpdate?.();
+      // No need to rollback since we didn't update UI state yet
+    } finally {
+      setAddingOrgId(null);
     }
   };
 
   const handleRemoveCourse = async (courseId: number) => {
-    console.log('handleRemoveCourse called with courseId:', courseId, 'currentScheduleId:', currentScheduleId);
     if (!currentScheduleId) {
-      console.error('No schedule selected. Please select a schedule first.');
       alert('Please select a schedule before removing courses.');
       return;
     }
     
+    // Store the course data for potential rollback
+    const courseToRemove = courses.find(c => c.org_id === courseId);
+    
     try {
-      console.log('Calling removeOrgFromSchedule with:', currentScheduleId, courseId);
+      // Optimistically update UI
+      removeOrganization(courseId);
+      
+      // Attempt backend removal
       await removeOrgFromSchedule(currentScheduleId, courseId);
-      console.log('Successfully removed course from schedule');
+      
       setIsCoursesEditMode(false);
-      onScheduleUpdate?.();
     } catch (error) {
       console.error('Failed to remove course from schedule:', error);
       alert('Failed to remove course from schedule. Please try again.');
-      onScheduleUpdate?.();
+      
+      // Rollback: re-add the course to UI state
+      if (courseToRemove) {
+        addOrganization(courseId).catch(err => {
+          console.error('Failed to rollback course removal:', err);
+        });
+      }
     }
   };
 
@@ -195,12 +236,7 @@ const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
               <FiEye className="w-4 h-4" />
             </button>
             <button
-              onClick={() => {
-                setIsCoursesEditMode(true);
-                if (availableCourses.length === 0) {
-                  void fetchCourses();
-                }
-              }}
+              onClick={() => setIsCoursesEditMode(true)}
               className={`p-1 rounded ml-1 ${isCoursesEditMode ? 'bg-blue-100 text-blue-600' : 'text-gray-400'}`}
               title="Edit mode"
             >
@@ -263,9 +299,10 @@ const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
                             </div>
                             <button
                               onClick={() => handleAddCourse(course.id)}
-                              className="px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600"
+                              disabled={addingOrgId === parseInt(course.id)}
+                              className="px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                              Add
+                              {addingOrgId === parseInt(course.id) ? 'Adding...' : 'Add'}
                             </button>
                           </div>
                         ))
@@ -289,10 +326,9 @@ const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
                           <ToggleItem
                             key={category.id}
                             label={category.name}
-                            checked={toggledCategories[category.id] ?? false}
+                            checked={visibleCategories?.has(category.id) ?? false}
                             onChange={() => {
-                              handleToggle(category.id);
-                              onCategoryToggle?.(category.id, !toggledCategories[category.id]);
+                              onCategoryToggle?.(category.id, !visibleCategories?.has(category.id));
                             }}
                             color="red"
                           />
@@ -325,12 +361,7 @@ const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
               <FiEye className="w-4 h-4" />
             </button>
             <button
-              onClick={() => {
-                setIsClubsEditMode(true);
-                if (availableClubs.length === 0) {
-                  void fetchClubs();
-                }
-              }}
+              onClick={() => setIsClubsEditMode(true)}
               className={`p-1 rounded ml-1 ${isClubsEditMode ? 'bg-blue-100 text-blue-600' : 'text-gray-400'}`}
               title="Edit mode"
             >
@@ -395,9 +426,10 @@ const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
                             </div>
                             <button
                               onClick={() => handleAddClub(club.id)}
-                              className="px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600"
+                              disabled={addingOrgId === club.id}
+                              className="px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                              Add
+                              {addingOrgId === club.id ? 'Adding...' : 'Add'}
                             </button>
                           </div>
                         ))
@@ -421,10 +453,9 @@ const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
                       <ToggleItem
                         key={category.id}
                         label={category.name}
-                        checked={toggledCategories[category.id] ?? false}
+                        checked={visibleCategories?.has(category.id) ?? false}
                         onChange={() => {
-                          handleToggle(category.id);
-                          onCategoryToggle?.(category.id, !toggledCategories[category.id]);
+                          onCategoryToggle?.(category.id, !visibleCategories?.has(category.id));
                         }}
                         color="green"
                       />
