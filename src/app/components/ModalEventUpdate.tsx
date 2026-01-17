@@ -59,7 +59,10 @@ export default function ModalEventUpdate({ show, onClose, oldEventInfo, savedEve
     const [customRecurrenceSummary, setCustomRecurrenceSummary] = useState<string | null>(null);
 
     // by default timezone is set to the user's current local time zone as detected by the browser.
-    const [timezone, setTimezone] = useState(Intl.DateTimeFormat().resolvedOptions().timeZone);
+    const [timezone, setTimezone] = useState(
+      oldEventInfo?.event_timezone ||
+      Intl.DateTimeFormat().resolvedOptions().timeZone
+    );
     const timezones = Intl.supportedValuesOf?.('timeZone') || [
         "America/New_York", "America/Chicago", "America/Denver", "America/Los_Angeles",
         "UTC", "Europe/London", "Asia/Tokyo", "Asia/Qatar"
@@ -126,6 +129,9 @@ export default function ModalEventUpdate({ show, onClose, oldEventInfo, savedEve
         };
         fetchTags();
 
+        if (oldEventInfo?.event_timezone) {
+          setTimezone(oldEventInfo.event_timezone);
+        }
         if (oldEventInfo?.start_datetime) {
             const start_datetime = dayjs(oldEventInfo.start_datetime);
             setDate(start_datetime); // DatePicker will only care about the calendar date
