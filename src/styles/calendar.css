@@ -103,3 +103,46 @@
   .fc-event.temp-club-event {
     background-color: #4ade80;
   } */
+
+  /* Mobile: Reorder header toolbar */
+  @media (max-width: 768px) {
+    .fc-header-toolbar {
+      display: flex !important;
+      flex-wrap: wrap !important;
+      gap: 8px !important;
+      margin: 16px !important;
+    }
+
+    /* Title (2nd chunk) goes first - full width on top */
+    .fc-toolbar-chunk:nth-child(2) {
+      order: 1 !important;
+      width: 100% !important;
+      text-align: center !important;
+    }
+
+    /* Navigation buttons (1st chunk) goes second - left side */
+    .fc-toolbar-chunk:nth-child(1) {
+      order: 2 !important;
+      flex: 1 !important;
+    }
+
+    /* View buttons (3rd chunk) goes third - right side */
+    .fc-toolbar-chunk:nth-child(3) {
+      order: 3 !important;
+      flex: 1 !important;
+      display: flex !important;
+      justify-content: flex-end !important;
+    }
+
+    /* Make title smaller on mobile */
+    .fc-toolbar-title {
+      font-size: 1.25rem !important;
+    }
+
+    /* Adjust button sizes for mobile */
+    .fc-button {
+      height: 36px !important;
+      padding: 0 12px !important;
+      font-size: 0.875rem !important;
+    }
+  }

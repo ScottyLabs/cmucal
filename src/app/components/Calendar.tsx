@@ -10,7 +10,7 @@ import { EventClickArg } from "@fullcalendar/core";
 import { useGcalEvents } from "../../context/GCalEventsContext";
 import { useEventState } from "../../context/EventStateContext";
 import "../../styles/calendar.css"; 
-
+import { useIsMobile } from "../hooks/useIsMobile";
 
 import { EventInput } from "@fullcalendar/core"; // Import FullCalendar's Event Type
 import axios from "axios";
@@ -29,6 +29,7 @@ const Calendar: FC<Props> = ({ events }) => {
   // Define state with EventInput type
   const { gcalEvents } = useGcalEvents();
   const { modalView, openDetails } = useEventState();
+  const isMobile = useIsMobile();
 
   const mergedEventsMap = new Map<string, EventInput>();
 
@@ -64,7 +65,7 @@ const Calendar: FC<Props> = ({ events }) => {
   };
 
   return (
-    <div className="p-8 dark:text-gray-300 h-full">
+    <div className={isMobile ? "dark:text-gray-300 h-full" : "p-8 dark:text-gray-300 h-full"}>
       <FullCalendar
         plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
         initialView="timeGridWeek"
