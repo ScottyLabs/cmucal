@@ -35,6 +35,7 @@ const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
   const [loadingCourses, setLoadingCourses] = useState(false);
   const [courseSearchTerm, setCourseSearchTerm] = useState("");
   const [clubSearchTerm, setClubSearchTerm] = useState("");
+  const accordionColors = ['red', 'green', 'purple', 'blue', 'orange'] as const;
 
   const handleToggle = (categoryId: number) => {
     setToggledCategories(prev => ({...prev, [categoryId]: !prev[categoryId]}));
@@ -277,12 +278,12 @@ const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
                 courses.length === 0 ? (
                   <div className="text-gray-500 text-sm">No courses in your schedule</div>
                 ) : (
-                  courses.map(course => (
+                  courses.map((course, index) => (
                     <Accordion 
                       key={course.org_id} 
                       title={course.name}
                       onRemove={() => handleRemoveCourse(course.org_id)}
-                      color="red"
+                      color={accordionColors[index % accordionColors.length]}
                     >
                       {course.categories.map(category => (
                         <div key={category.id} className="mb-2">
@@ -294,7 +295,7 @@ const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
                               handleToggle(category.id);
                               onCategoryToggle?.(category.id, !toggledCategories[category.id]);
                             }}
-                            color="red"
+                            color={accordionColors[index % accordionColors.length]}
                           />
                         </div>
                       ))}
