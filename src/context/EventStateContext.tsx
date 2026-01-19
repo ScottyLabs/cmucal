@@ -119,6 +119,18 @@ export const EventStateProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
     // 4. Sync with Google Calendar
     try {
+      // First check if Google is authorized
+      const statusCheck = await axios.get(`${API_BASE_URL}/google/calendar/status`, {
+        withCredentials: true,
+      });
+
+      if (!statusCheck.data.authorized) {
+        console.log("Google Calendar not authorized. Redirecting to authorize...");
+        // Redirect to authorization or show a modal
+        window.location.href = `${API_BASE_URL}/google/authorize?redirect=${window.location.href}`;
+        return;
+      }
+
       if (!isCurrentlySaved) {
         console.log("adding event to gcallll")
         // Add to Google Calendar via backend
@@ -143,6 +155,11 @@ export const EventStateProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       }
     } catch (err) {
       console.error("Error syncing with Google Calendar:", err);
+      // If 401, redirect to authorize
+      if (axios.isAxiosError(err) && err.response?.status === 401) {
+        console.log("Session expired, redirecting to authorize...");
+        window.location.href = `${API_BASE_URL}/google/authorize?redirect=${window.location.href}`;
+      }
     }
   };
 
