@@ -46,7 +46,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <ClerkProvider>
       <html lang="en" className="h-full">
-        <body className={`${inter.variable} ${geistMono.variable} font-sans antialiased dark:bg-gray-800 h-full`}>
+        <body className={`${inter.variable} ${geistMono.variable} font-sans antialiased dark:#0F1115 h-full`}>
           <GcalEventsProvider>
             <EventStateProvider>
               <UserProvider>

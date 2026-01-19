@@ -34,6 +34,11 @@ const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
   const [loadingCourses, setLoadingCourses] = useState(false);
   const [courseSearchTerm, setCourseSearchTerm] = useState("");
   const [clubSearchTerm, setClubSearchTerm] = useState("");
+  const accordionColors = ['red', 'green', 'purple', 'blue', 'orange'] as const;
+
+  // const handleToggle = (categoryId: number) => {
+  //   setToggledCategories(prev => ({...prev, [categoryId]: !prev[categoryId]}));
+  // };
   const [addingOrgId, setAddingOrgId] = useState<number | null>(null);
 
   // Fetch available clubs
@@ -76,10 +81,11 @@ const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
     
     setAddingOrgId(clubId);
     try {
-      const [, orgData] = await Promise.all([
-        addOrgToSchedule(currentScheduleId, clubId),
-        addOrganization(clubId)
-      ]);
+      // First, add to backend schedule
+      await addOrgToSchedule(currentScheduleId, clubId);
+      
+      // Only update UI state after backend succeeds
+      const orgData = await addOrganization(clubId);
       
       // Enable all categories for the newly added org
       if (orgData?.categories) {
@@ -92,6 +98,7 @@ const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
     } catch (error) {
       console.error('Failed to add club to schedule:', error);
       alert('Failed to add club to schedule. Please try again.');
+      // No need to rollback since we didn't update UI state yet
     } finally {
       setAddingOrgId(null);
     }
@@ -103,13 +110,27 @@ const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
       return;
     }
     
+    // Store the club data for potential rollback
+    const clubToRemove = clubs.find(c => c.org_id === clubId);
+    
     try {
+      // Optimistically update UI
       removeOrganization(clubId);
+      
+      // Attempt backend removal
       await removeOrgFromSchedule(currentScheduleId, clubId);
+      
       setIsClubsEditMode(false);
     } catch (error) {
       console.error('Failed to remove club from schedule:', error);
       alert('Failed to remove club from schedule. Please try again.');
+      
+      // Rollback: re-add the club to UI state
+      if (clubToRemove) {
+        addOrganization(clubId).catch(err => {
+          console.error('Failed to rollback club removal:', err);
+        });
+      }
     }
   };
 
@@ -122,10 +143,11 @@ const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
     const orgId = parseInt(courseId);
     setAddingOrgId(orgId);
     try {
-      const [, orgData] = await Promise.all([
-        addOrgToSchedule(currentScheduleId, orgId),
-        addOrganization(orgId)
-      ]);
+      // First, add to backend schedule
+      await addOrgToSchedule(currentScheduleId, orgId);
+      
+      // Only update UI state after backend succeeds
+      const orgData = await addOrganization(orgId);
       
       // Enable all categories for the newly added org
       if (orgData?.categories) {
@@ -138,6 +160,7 @@ const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
     } catch (error) {
       console.error('Failed to add course to schedule:', error);
       alert('Failed to add course to schedule. Please try again.');
+      // No need to rollback since we didn't update UI state yet
     } finally {
       setAddingOrgId(null);
     }
@@ -149,13 +172,27 @@ const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
       return;
     }
     
+    // Store the course data for potential rollback
+    const courseToRemove = courses.find(c => c.org_id === courseId);
+    
     try {
+      // Optimistically update UI
       removeOrganization(courseId);
+      
+      // Attempt backend removal
       await removeOrgFromSchedule(currentScheduleId, courseId);
+      
       setIsCoursesEditMode(false);
     } catch (error) {
       console.error('Failed to remove course from schedule:', error);
       alert('Failed to remove course from schedule. Please try again.');
+      
+      // Rollback: re-add the course to UI state
+      if (courseToRemove) {
+        addOrganization(courseId).catch(err => {
+          console.error('Failed to rollback course removal:', err);
+        });
+      }
     }
   };
 
@@ -282,12 +319,12 @@ const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
                 courses.length === 0 ? (
                   <div className="text-gray-500 text-sm">No courses in your schedule</div>
                 ) : (
-                  courses.map(course => (
+                  courses.map((course, index) => (
                     <Accordion 
                       key={course.org_id} 
                       title={course.name}
                       onRemove={() => handleRemoveCourse(course.org_id)}
-                      color="red"
+                      color={accordionColors[index % accordionColors.length]}
                     >
                       {course.categories.map(category => (
                         <div key={category.id} className="mb-2">
@@ -298,7 +335,7 @@ const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
                             onChange={() => {
                               onCategoryToggle?.(category.id, !visibleCategories?.has(category.id));
                             }}
-                            color="red"
+                            color={accordionColors[index % accordionColors.length]}
                           />
                         </div>
                       ))}

@@ -4,13 +4,36 @@ interface ToggleItemProps {
   label: string;
   checked: boolean;
   onChange: (checked: boolean) => void;
-  color?: 'red' | 'green';
+  color?: 'red' | 'green' | 'purple' | 'blue' | 'orange';
 }
 
 const ToggleItem: React.FC<ToggleItemProps> = ({ label, checked, onChange, color = 'green' }) => {
   const colorClasses = {
-    red: 'border-red-200 checked:border-red-500 checked:bg-red-500',
-    green: 'border-green-200 checked:border-green-500 checked:bg-green-500',
+    red: `
+      border-[rgba(242,109,109,0.4)]
+      checked:border-[rgba(242,109,109,1)]
+      checked:bg-[rgba(242,109,109,1)]
+    `,
+    green: `
+      border-[rgba(88,192,92,0.4)]
+      checked:border-[rgba(88,192,92,1)]
+      checked:bg-[rgba(88,192,92,1)]
+    `,
+    purple: `
+      border-[rgba(195,109,242,0.4)]
+      checked:border-[rgba(195,109,242,1)]
+      checked:bg-[rgba(195,109,242,1)]
+    `,
+    blue: `
+      border-[rgba(109,164,242,0.4)]
+      checked:border-[rgba(109,164,242,1)]
+      checked:bg-[rgba(109,164,242,1)]
+    `,
+    orange: `
+      border-[rgba(242,176,109,0.4)]
+      checked:border-[rgba(242,176,109,1)]
+      checked:bg-[rgba(242,176,109,1)]
+    `,
   };
 
   return (
@@ -20,6 +43,7 @@ const ToggleItem: React.FC<ToggleItemProps> = ({ label, checked, onChange, color
         checked={checked}
         onChange={(e) => onChange(e.target.checked)}
         className={`
+          appearance-none
           w-[18px] h-[18px]
           rounded
           border-2
