@@ -97,6 +97,7 @@ export interface EventPayloadType {
   start_datetime?: string | null;
   end_datetime?: string | null;
   is_all_day?: boolean;
+  event_timezone: string;
   location: string;
   source_url?: string;
   event_type: string;
@@ -256,6 +257,7 @@ export interface ClubOrganization {
 export type CoursesClubsResponse = {
   courses: Course[];
   clubs: Club[];
+  schedule_id?: number;
 };
 
 export interface TagType {
