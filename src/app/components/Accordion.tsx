@@ -9,15 +9,18 @@ interface AccordionProps {
   subtitle?: string;
   children: React.ReactNode;
   onRemove?: () => void;
-  color?: 'red' | 'green';
+  color?: 'red' | 'green' | 'purple' | 'blue' | 'orange';
 }
 
 const Accordion: React.FC<AccordionProps> = ({ title, subtitle, children, onRemove, color = 'green' }) => {
   const [isOpen, setIsOpen] = useState(true);
 
   const colorClasses = {
-    red: 'bg-red-500',
-    green: 'bg-green-500',
+    red: 'bg-[rgba(242,109,109,1)]',
+    green: 'bg-[rgba(88,192,92,1)]',
+    purple: 'bg-[rgba(195,109,242,1)]',
+    blue: 'bg-[rgba(109,164,242,1)]',
+    orange: 'bg-[rgba(242,176,109,1)]',
   };
 
   return (

@@ -22,7 +22,7 @@ export default function SignedOutNav() {
   }
 
   return (
-    <nav className="flex justify-end border-b bg-[#C41230] dark:bg-gray-800">
+    <nav className="flex justify-end border-b-[#E5E7EB] dark:border-b-[#262A32] bg-[#C41230] dark:bg-[#1C1F26]">
       {/* Right Section: Upload Button, dark mode, logout */}
         <div className="cursor-pointer">
         {mounted && (
