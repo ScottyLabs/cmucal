@@ -51,16 +51,9 @@ const Calendar: FC<Props> = ({ events }) => {
 
   const mergedEvents = Array.from(mergedEventsMap.values());
 
-
-  console.log("Merged Events:", mergedEvents);
-
+  // Show event detail in the modal by querying event.id from event_occurences
   const handleEventClick = async (info: EventClickArg) => {
-    console.log(info.event);
-    console.log(info.event.extendedProps);
-    console.log("clicked event id:", info.event.extendedProps.event_id);
-    // setEventId(info.event.extendedProps.event_id)
-    openDetails(Number(info.event.id));
-    openDetails(info.event.extendedProps.event_id);
+    openDetails(Number(info.event.id));  
     console.log("modal:", modalView)
   };
 
@@ -80,10 +73,7 @@ const Calendar: FC<Props> = ({ events }) => {
         selectable={true}
         eventClick={handleEventClick}
         eventContent={FullCalendarCard} 
-        // height="auto"
-        // height={600}
         height="100%"
-        // eventClassNames="text-sm font-semibold p-1 rounded-md"
       />
 
     </div>

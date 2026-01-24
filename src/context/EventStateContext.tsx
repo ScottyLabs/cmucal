@@ -91,28 +91,36 @@ export const EventStateProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
     // 2. Update the User_saved_events table in database
     try {
+      const payload = {
+        user_id: user?.id,
+        event_id: event.id,
+        google_event_id: event.google_event_id ?? event.id, // fallback for local events
+      };
+
       if (!isCurrentlySaved) {
         // Add the event to current user's calendar
-        await axios.post(`${API_BASE_URL}/events/user_saved_events`, {
-          user_id: user?.id,
-          event_id: event.id,
-          google_event_id: event.id, // [Q|TODO] is google event id needed in this table
-        }, {
-          withCredentials: true,
-        }); 
+        // [Q|TODO] is google event id needed in this table
+        await axios.post(`${API_BASE_URL}/event_occurrences/${payload.event_id}`, payload, { withCredentials: true });
       } else {
         // Remove the event from current user's calendar
-        await axios.delete(`${API_BASE_URL}/events/user_saved_events/${event.id}`, {
-          data: {
-          user_id: user?.id,
-          google_event_id: event.id, // [Q|TODO] is google event id needed in this table
-        },
+        // [Q|TODO] is google event id needed in this table
+        await axios.delete(`${API_BASE_URL}/events/user_saved_events/${payload.event_id}`, {
+          data: payload,
           withCredentials: true,
         });
       }
     } catch (err) {
-      console.error("Error saving / unsaving the event to user_saved_events, ", err);
+      if (axios.isAxiosError(err)) {
+        console.error("❌ Backend error:", {
+          status: err.response?.status,
+          data: err.response?.data,
+          config: err.config,
+        });
+      } else {
+        console.error("❌ Unknown error:", err);
+      }
     }
+
 
     // 3. Update calendar view
     // fetchCalendarEvents();
@@ -188,7 +196,7 @@ export const useEventState = () => {
 
   const openDetails = (event_id: number, savedEventDetails?: EventType) => {
     context.setSelectedEvent(event_id);
-    context.setModalData({"savedEventDetails": savedEventDetails})
+    // context.setModalData({ savedEventDetails }) 
     context.setModalView("details");
   };
   const openUpdate = (eventInfo: EventType, selectedTags: Tag[]) => {

@@ -42,9 +42,9 @@ function SkeletonEventDetails() {
 export default function ModalEvent({ show, onClose, savedEventDetails }: ModalEventProps) {    
     const { user } = useUser();
     const { selectedEvent, openUpdate, toggleAdded, savedEventIds } = useEventState();
-    const [eventDetails, setEventDetails] = useState<EventType | null>(savedEventDetails || null);
+    const [eventDetails, setEventDetails] = useState<EventType | null>(null);
     const [selectedTags, setSelectedTags] = useState<Tag[]>([]);
-    console.log("🤔🤔🤔savedEventDetails", savedEventDetails, eventDetails)
+    // console.log("🤔🤔🤔savedEventDetails", savedEventDetails, eventDetails)
     const [loadingEvent, setLoadingEvent] = useState(false);
     const [loadingTags, setLoadingTags] = useState(false);
 
@@ -61,7 +61,7 @@ export default function ModalEvent({ show, onClose, savedEventDetails }: ModalEv
             setLoadingEvent(true);
             const fetchEventDetails = async() => {
                 try {
-                    const eventRes = await axios.get(`${API_BASE_URL}/events/${eventId}`, {
+                    const eventRes = await axios.get(`${API_BASE_URL}/events/event_occurrences/${eventId}`, {
                         params: {
                             user_id: user?.id,
                         },
@@ -101,7 +101,7 @@ export default function ModalEvent({ show, onClose, savedEventDetails }: ModalEv
         fetchTag();        
     }, [eventId, eventDetails])
 
-    console.log("show edit modal!!", show, eventDetails)
+    // console.log("show edit modal!!", show, eventDetails)
 
     return (
         <Modal show={show} onClose={onClose}>
