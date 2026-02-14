@@ -62,6 +62,10 @@ const Calendar: FC<Props> = ({ events }) => {
       location: event.extendedProps.location ?? '',
       description: event.extendedProps.description ?? '',
       source_url: event.extendedProps.source_url,
+      org_id: event.extendedProps.org_id,
+      category_id: event.extendedProps.category_id,
+      org: event.extendedProps.org,
+      user_is_admin: event.extendedProps.user_is_admin,
     };
 
     // Get position of clicked event for popover placement
