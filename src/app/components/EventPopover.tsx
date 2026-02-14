@@ -7,6 +7,7 @@ import { EventType } from "../types/EventType";
 import { useEventState, PopoverPosition } from "../../context/EventStateContext";
 import { fetchTagsForEvent } from "../utils/api/events";
 import { FiX } from "react-icons/fi";
+import { useGcalEvents } from "../../context/GCalEventsContext";
 
 type EventPopoverProps = {
   show: boolean;
@@ -19,6 +20,7 @@ type Tag = { id?: string; name: string };
 
 export default function EventPopover({ show, onClose, position, savedEventDetails }: EventPopoverProps) {
   const { selectedEvent, toggleAdded, savedEventIds, openUpdate } = useEventState();
+  const { isGoogleConnected } = useGcalEvents();
   const [eventDetails, setEventDetails] = useState<EventType | null>(savedEventDetails || null);
   const [selectedTags, setSelectedTags] = useState<Tag[]>([]);
   const [loadingTags, setLoadingTags] = useState(false);
@@ -132,6 +134,15 @@ export default function EventPopover({ show, onClose, position, savedEventDetail
                         {tag.name}
                       </span>
                     ))}
+                  </div>
+                )}
+
+                {/* Google Calendar Warning */}
+                {!isGoogleConnected && (
+                  <div className="mt-3 p-2 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-md">
+                    <p className="text-xs text-yellow-800 dark:text-yellow-200">
+                      Connect Google Calendar to sync events to your calendar
+                    </p>
                   </div>
                 )}
 

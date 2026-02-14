@@ -6,6 +6,7 @@ import { EventType } from "../app/types/EventType";
 import { EventInput } from "@fullcalendar/core";
 import { List } from "lucide-react";
 import { API_BASE_URL } from "~/app/utils/api/api";
+import { useGcalEvents } from "./GCalEventsContext";
 
 export type ModalView = "details" | "update" | "pre_upload" | "upload" | "uploadLink" | null;
 type Tag = { id?: string; name: string };
@@ -35,6 +36,7 @@ export const EventStateContext = createContext<EventStateContextType | null>(nul
 
 export const EventStateProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useUser();
+  const { isGoogleConnected, cmuCalendarId } = useGcalEvents();
   const [selectedEvent, setSelectedEvent] = useState<number|null>(null);
   const [modalView, setModalView] = useState<ModalView>(null);
   const [modalData, setModalData] = useState<Record<string, any>>({});
@@ -124,32 +126,40 @@ export const EventStateProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     // 3. Update calendar view
     // fetchCalendarEvents();
 
-    // 4. Sync with Google Calendar
-    try {
-      if (!isCurrentlySaved) {
-        console.log("adding event to gcallll")
-        // Add to Google Calendar via backend
-        await axios.post(`${API_BASE_URL}/google/calendar/events/add`, {
-          user_id: user?.id,
-          local_event_id: event.id,
-          title: event.title,
-          start: event.start_datetime,
-          end: event.end_datetime,
-        }, {
-          withCredentials: true,
-        });        
-      } else {
-        // Remove from Google Calendar via backend
-        await axios.delete(`${API_BASE_URL}/google/calendar/events/${event.id}`, {
-          data: {
+    // 4. Sync with Google Calendar (only if connected)
+    if (isGoogleConnected) {
+      try {
+        if (!isCurrentlySaved) {
+          console.log("Adding event to Google Calendar");
+          // Add to Google Calendar via backend
+          await axios.post(`${API_BASE_URL}/google/calendar/events/add`, {
             user_id: user?.id,
-          },
-          withCredentials: true,
-        });
-        
+            local_event_id: event.id,
+            title: event.title,
+            start: event.start_datetime,
+            end: event.end_datetime,
+            location: event.location,
+            description: event.description,
+          }, {
+            withCredentials: true,
+          });        
+        } else {
+          // Remove from Google Calendar via backend
+          await axios.delete(`${API_BASE_URL}/google/calendar/events/${event.id}`, {
+            data: {
+              user_id: user?.id,
+            },
+            withCredentials: true,
+          });
+        }
+      } catch (err) {
+        console.error("Error syncing with Google Calendar:", err);
+        // Optionally show user-friendly error
+        const action = isCurrentlySaved ? "remove from" : "add to";
+        console.warn(`Failed to ${action} Google Calendar. Event saved locally only.`);
       }
-    } catch (err) {
-      console.error("Error syncing with Google Calendar:", err);
+    } else {
+      console.log("Google Calendar not connected. Event saved locally only.");
     }
   };
 

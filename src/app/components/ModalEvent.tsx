@@ -10,6 +10,7 @@ import { useEffect, useState } from 'react';
 import { useEventState } from "../../context/EventStateContext";
 import { fetchTagsForEvent } from "../utils/api/events";
 import { API_BASE_URL } from '../utils/api/api';
+import { useGcalEvents } from '../../context/GCalEventsContext';
 
 type ModalEventProps = {
     show: boolean;
@@ -42,6 +43,7 @@ function SkeletonEventDetails() {
 export default function ModalEvent({ show, onClose, savedEventDetails }: ModalEventProps) {    
     const { user } = useUser();
     const { selectedEvent, openUpdate, toggleAdded, savedEventIds } = useEventState();
+    const { isGoogleConnected } = useGcalEvents();
     const [eventDetails, setEventDetails] = useState<EventType | null>(savedEventDetails || null);
     const [selectedTags, setSelectedTags] = useState<Tag[]>([]);
     console.log("🤔🤔🤔savedEventDetails", savedEventDetails, eventDetails)
@@ -117,16 +119,39 @@ export default function ModalEvent({ show, onClose, savedEventDetails }: ModalEv
                 <p className="text-base text-gray-500">{eventDetails.location}</p>
                 {eventDetails.org && (<p className="text-base text-gray-500">Hosted by {eventDetails.org}</p>)}
                 <p className="text-base text-gray-500 py-4">{eventDetails.description || "No additional details available."}</p>
+                
+                {/* Tags */}
+                {!loadingTags && selectedTags.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mb-3">
+                    {selectedTags.map((tag) => (
+                      <span
+                        key={tag.id}
+                        className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-2 py-0.5 rounded"
+                      >
+                        {tag.name}
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                {/* Google Calendar Warning */}
+                {!isGoogleConnected && (
+                  <div className="mb-3 p-2 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-md">
+                    <p className="text-xs text-yellow-800 dark:text-yellow-200">
+                      Connect Google Calendar to sync events to your calendar
+                    </p>
+                  </div>
+                )}
+
                 <div className="flex gap-4">
                 <button 
                 className={`px-4 py-2 rounded-md ${ isAdmin ? "flex-1" : "w-full"} ${
-                    // eventDetails.user_saved ? "bg-blue-300" : "bg-blue-500"
                     savedEventIds.has(eventDetails.id) ? "bg-blue-300" : "bg-blue-500"
                 } text-white`}
-                    // onClick={() => {toggleAdded(eventDetails.id); onClose()}}>
                     onClick={() => {toggleAdded(eventDetails); onClose()}}>
                    { savedEventIds.has(eventDetails.id) ? "Remove" : "Add" }
                 </button> 
+
                 <button className={`px-4 py-2 rounded-md ${ isAdmin ? "flex-1" : "hidden"}  bg-gray-200`}
                     onClick={() => { openUpdate(eventDetails, selectedTags) }}>
                     Edit Event
