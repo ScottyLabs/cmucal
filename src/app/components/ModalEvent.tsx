@@ -103,7 +103,7 @@ export default function ModalEvent({ show, onClose, event_id, googleFields }: Mo
             try {
                 // Fetching tags              
                 // const eventId = eventDetails.event_id;
-                const tagRes = await axios.get(`http://localhost:5001/api/events/${event_id}/tags`, {
+                const tagRes = await axios.get(`http://localhost:5001/api/tags/${event_id}`, {
                     withCredentials: true,
                 });
                 const tags = tagRes.data; // e.g. [{ id: "1", name: "computer science" }, ...]
