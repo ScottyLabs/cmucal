@@ -34,11 +34,11 @@ const ToggleItem: React.FC<ToggleItemProps> = ({ label, checked, onChange, color
   };
 
   return (
-    <label className="flex items-center py-1.5 cursor-pointer">
-      <div
-        onClick={() => onChange(!checked)}
-        className="cursor-pointer"
-      >
+    <label 
+      className="flex items-center py-1.5 cursor-pointer"
+      onClick={() => onChange(!checked)}
+    >
+      <div className="flex-shrink-0">
         {checked ? (
           <FaSquareCheck className={`w-[20px] h-[20px] ${colorClasses[color].checked}`} />
         ) : (

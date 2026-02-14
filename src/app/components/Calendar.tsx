@@ -1,22 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { FC } from "react";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
-import { EventClickArg } from "@fullcalendar/core"; 
+import { EventClickArg, EventInput } from "@fullcalendar/core";
 import { useGcalEvents } from "../../context/GCalEventsContext";
 import { useEventState } from "../../context/EventStateContext";
-import "../../styles/calendar.css"; 
+import "../../styles/calendar.css";
 import { useIsMobile } from "../hooks/useIsMobile";
-
-import { EventInput } from "@fullcalendar/core"; // Import FullCalendar's Event Type
-import axios from "axios";
-import { useUser } from "@clerk/nextjs";
 import FullCalendarCard from "./FullCalendarCard";
-
 import { EventType } from "../types/EventType";
 
 type Props = {
@@ -28,7 +22,7 @@ type Props = {
 const Calendar: FC<Props> = ({ events }) => {
   // Define state with EventInput type
   const { gcalEvents } = useGcalEvents();
-  const { modalView, openDetails } = useEventState();
+  const { openDetails } = useEventState();
   const isMobile = useIsMobile();
 
   const mergedEventsMap = new Map<string, EventInput>();
@@ -54,12 +48,31 @@ const Calendar: FC<Props> = ({ events }) => {
 
   console.log("Merged Events:", mergedEvents);
 
-  const handleEventClick = async (info: EventClickArg) => {
-    console.log(info.event);
-    console.log(info.event.extendedProps);
-    console.log("clicked event id:", info.event.extendedProps.event_id);
-    openDetails(info.event.extendedProps.event_id);
-    console.log("modal:", modalView)
+  const handleEventClick = (info: EventClickArg) => {
+    const { event, el } = info;
+    const eventId = event.extendedProps.event_id;
+
+    // Construct event data from FullCalendar event to avoid API fetch
+    const eventData: Partial<EventType> = {
+      id: eventId,
+      title: event.title,
+      start_datetime: event.start?.toISOString() ?? '',
+      end_datetime: event.end?.toISOString() ?? '',
+      is_all_day: event.allDay,
+      location: event.extendedProps.location ?? '',
+      description: event.extendedProps.description ?? '',
+      source_url: event.extendedProps.source_url,
+    };
+
+    // Get position of clicked event for popover placement
+    const rect = el.getBoundingClientRect();
+    const position = {
+      x: rect.right + 8, // 8px gap from event
+      y: rect.top,
+      anchorRect: rect,
+    };
+
+    openDetails(eventId, eventData as EventType, position);
   };
 
   return (

@@ -10,6 +10,12 @@ import { API_BASE_URL } from "~/app/utils/api/api";
 export type ModalView = "details" | "update" | "pre_upload" | "upload" | "uploadLink" | null;
 type Tag = { id?: string; name: string };
 
+export type PopoverPosition = {
+  x: number;
+  y: number;
+  anchorRect: DOMRect;
+} | null;
+
 type EventStateContextType = {
   selectedEvent: number|null;
   setSelectedEvent: (id: number|null) => void;
@@ -18,10 +24,11 @@ type EventStateContextType = {
   modalData: Record<string, any>;
   setModalData: (data: Record<string, any>) => void;
   savedEventIds: Set<number>;
-  // toggleAdded: (eventId: number) => void;
   toggleAdded: (event: EventType) => void;
   calendarEvents: EventInput[];
   setCalendarEvents: (events: EventInput[]) => void;
+  popoverPosition: PopoverPosition;
+  setPopoverPosition: (position: PopoverPosition) => void;
 };
 
 export const EventStateContext = createContext<EventStateContextType | null>(null);
@@ -31,9 +38,9 @@ export const EventStateProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const [selectedEvent, setSelectedEvent] = useState<number|null>(null);
   const [modalView, setModalView] = useState<ModalView>(null);
   const [modalData, setModalData] = useState<Record<string, any>>({});
-  // const [savedEventIds, setSavedEventIds] = useState<number[]>([]);
   const [savedEventIds, setSavedEventIds] = useState(new Set<number>());
-  const [calendarEvents, setCalendarEvents] = useState<EventInput[]>([]); 
+  const [calendarEvents, setCalendarEvents] = useState<EventInput[]>([]);
+  const [popoverPosition, setPopoverPosition] = useState<PopoverPosition>(null); 
 
   // console.log("😮Fetching saved events for user:", user?.id);
 
@@ -149,13 +156,14 @@ export const EventStateProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
 
   return (
-    <EventStateContext.Provider value={{ 
-        selectedEvent, setSelectedEvent, 
-        modalView, setModalView, 
-        modalData, setModalData, 
-        savedEventIds, 
+    <EventStateContext.Provider value={{
+        selectedEvent, setSelectedEvent,
+        modalView, setModalView,
+        modalData, setModalData,
+        savedEventIds,
         toggleAdded,
-        calendarEvents, setCalendarEvents 
+        calendarEvents, setCalendarEvents,
+        popoverPosition, setPopoverPosition
       }}>
         {children}
       </EventStateContext.Provider>
@@ -169,9 +177,10 @@ export const useEventState = () => {
     throw new Error("useEventState must be used within a EventStateContext.Provider");
   }
 
-  const openDetails = (event_id: number, savedEventDetails?: EventType) => {
+  const openDetails = (event_id: number, savedEventDetails?: EventType, position?: PopoverPosition) => {
     context.setSelectedEvent(event_id);
-    context.setModalData({"savedEventDetails": savedEventDetails})
+    context.setModalData({"savedEventDetails": savedEventDetails});
+    context.setPopoverPosition(position ?? null);
     context.setModalView("details");
   };
   const openUpdate = (eventInfo: EventType, selectedTags: Tag[]) => {
@@ -200,6 +209,7 @@ export const useEventState = () => {
   const closeModal = () => {
     context.setSelectedEvent(null);
     context.setModalView(null);
+    context.setPopoverPosition(null);
   };
   
 
@@ -210,8 +220,9 @@ export const useEventState = () => {
     modalData: context.modalData,
     savedEventIds: context.savedEventIds,
     toggleAdded: context.toggleAdded,
-    calendarEvents: context.calendarEvents,        
-    setCalendarEvents: context.setCalendarEvents,  
+    calendarEvents: context.calendarEvents,
+    setCalendarEvents: context.setCalendarEvents,
+    popoverPosition: context.popoverPosition,
     openDetails,
     openUpdate,
     openPreUpload,
