@@ -54,52 +54,51 @@ export default function ModalEvent({ show, onClose, savedEventDetails }: ModalEv
 
     useEffect(() => {
         // get specific event with ID
-        if (!eventDetails) { 
-            // TODO: i'd wanna have this so that it doesn't reload every time but we can think about this later
-            // cuz currently the tags are not being passed through the modals and if i wanna keep them up to date i'll have to fetch
-            // but i don't want it to load
-            setLoadingEvent(true);
-            const fetchEventDetails = async() => {
-                try {
-                    const eventRes = await axios.get(`${API_BASE_URL}/events/${eventId}`, {
-                        params: {
-                            user_id: user?.id,
-                        },
-                        withCredentials: true,
-                    });
-                    setEventDetails(eventRes.data)
-                
-                } catch (err) {
-                    console.error("Failed to fetch event details for event: ", eventId, err);
-                } finally {
-                    setLoadingEvent(false);
-                }
+        if (!eventId) return;
+        if (eventDetails) return; // Already have event details, don't refetch
+
+        setLoadingEvent(true);
+        const fetchEventDetails = async() => {
+            try {
+                const eventRes = await axios.get(`${API_BASE_URL}/events/${eventId}`, {
+                    params: {
+                        user_id: user?.id,
+                    },
+                    withCredentials: true,
+                });
+                setEventDetails(eventRes.data)
+
+            } catch (err) {
+                console.error("Failed to fetch event details for event: ", eventId, err);
+            } finally {
+                setLoadingEvent(false);
             }
-            fetchEventDetails();
         }
-    }, [eventId, eventDetails])
+        fetchEventDetails();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [eventId, user?.id])
 
     useEffect(() => {
+        if (!eventId) return;
+
         setLoadingTags(true);
         const fetchTag = async() => {
             try {
-                if (eventId) {
-                    const tags = await fetchTagsForEvent(eventId); // e.g. [{ id: "1", name: "computer science" }, ...]
-                    setSelectedTags(
-                        tags.map((tag: any) => ({
-                            id: tag.id,
-                            name: tag.name.toLowerCase(),
-                        }))
-                    );
-                }
+                const tags = await fetchTagsForEvent(eventId); // e.g. [{ id: "1", name: "computer science" }, ...]
+                setSelectedTags(
+                    tags.map((tag: any) => ({
+                        id: tag.id,
+                        name: tag.name.toLowerCase(),
+                    }))
+                );
             } catch (err) {
                 console.error("Failed to fetch event tags for event: ", eventId, err);
-            } finally { 
+            } finally {
                 setLoadingTags(false);
             }
         }
-        fetchTag();        
-    }, [eventId, eventDetails])
+        fetchTag();
+    }, [eventId])
 
     console.log("show edit modal!!", show, eventDetails)
 

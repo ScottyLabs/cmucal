@@ -58,8 +58,6 @@ const Calendar: FC<Props> = ({ events }) => {
     console.log(info.event);
     console.log(info.event.extendedProps);
     console.log("clicked event id:", info.event.extendedProps.event_id);
-    // setEventId(info.event.extendedProps.event_id)
-    openDetails(Number(info.event.id));
     openDetails(info.event.extendedProps.event_id);
     console.log("modal:", modalView)
   };

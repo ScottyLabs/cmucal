@@ -170,13 +170,24 @@
   background-color: #719F94;
 }
 
-/* .fc-event.temp-course-event {
-    background-color: #f87171;
-  }
+/* Hide time text on small/narrow event cards */
+.fc-timegrid-event {
+  container-type: size;
+}
 
-  .fc-event.temp-club-event {
-    background-color: #4ade80;
-  } */
+/* Hide time when event container is too narrow */
+@container (max-width: 70px) {
+  .custom-event-time {
+    display: none;
+  }
+}
+
+/* Hide time when event container is too short */
+@container (max-height: 30px) {
+  .custom-event-time {
+    display: none;
+  }
+}
 
   /* Mobile: Reorder header toolbar */
   @media (max-width: 768px) {
