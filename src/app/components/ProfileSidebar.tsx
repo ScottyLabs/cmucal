@@ -446,12 +446,12 @@ const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
                 clubs.length === 0 ? (
                   <div className="text-gray-500 text-sm">No clubs in your schedule</div>
                 ) : (
-                clubs.map(club => (
-                <Accordion 
-                  key={club.org_id} 
+                clubs.map((club, index) => (
+                <Accordion
+                  key={club.org_id}
                   title={club.name}
                   onRemove={() => handleRemoveClub(club.org_id)}
-                  color="green"
+                  color={accordionColors[index % accordionColors.length]}
                 >
                   {club.categories.map(category => (
                     <div key={category.id} className="mb-2">
@@ -462,7 +462,7 @@ const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
                         onChange={() => {
                           onCategoryToggle?.(category.id, !visibleCategories?.has(category.id));
                         }}
-                        color="green"
+                        color={accordionColors[index % accordionColors.length]}
                       />
                     </div>
                   ))}

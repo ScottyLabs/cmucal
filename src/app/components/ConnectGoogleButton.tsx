@@ -12,6 +12,7 @@ import { checkGoogleAuthStatus, ensureCalendarExists, fetchBulkEventsFromCalenda
 import { API_BASE_URL } from "../utils/api/api";
 import Modal from "./Modal";
 
+// TODO: FIX GOOGLE CALENDAR AND THE JUST_CONNECTED POPUP
 
 const ITEM_HEIGHT = 48;
 const ITEM_PADDING_TOP = 8;
@@ -30,12 +31,12 @@ type ConnectGoogleButtonProps = {
 
 export function ConnectGoogleButton({clerkId}: ConnectGoogleButtonProps) {
   // https://mui.com/material-ui/react-select/
-  const [isConnected, setIsConnected] = useState(false);
   const [loading, setLoading] = useState(true);
+  const hasFetchedCalendars = React.useRef(false); // Track if we've already fetched calendars
 
   const [availableCalendars, setAvailableCalendars] = useState<any[]>([]); // full objects with id & summary
   const [selectedCalendarIds, setSelectedCalendarIds] = useState<string[]>([]); // selected calendar IDs from dropdown
-  const { gcalEvents, setGcalEvents } = useGcalEvents();
+  const { gcalEvents, setGcalEvents, isGoogleConnected, setIsGoogleConnected, cmuCalendarId, setCmuCalendarId } = useGcalEvents();
   const [cmuCalIds, setCMUCalIds] = useState<string[]>([]);
   const [showImportSummary, setShowImportSummary] = useState(false);
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
@@ -52,7 +53,7 @@ export function ConnectGoogleButton({clerkId}: ConnectGoogleButtonProps) {
     const checkAuthStatus = async () => {
       try {
         const { authorized } = await checkGoogleAuthStatus();
-        setIsConnected(authorized);
+        setIsGoogleConnected(authorized);
 
         // Show import summary modal if just connected
         if (justConnected) {
@@ -72,7 +73,8 @@ export function ConnectGoogleButton({clerkId}: ConnectGoogleButtonProps) {
           window.history.replaceState({}, '', url.toString());
         }
 
-        if (authorized && availableCalendars.length === 0) {
+        if (authorized && availableCalendars.length === 0 && !hasFetchedCalendars.current) {
+          hasFetchedCalendars.current = true; // Mark as fetched to prevent duplicate calls
           await fetchCalendars(clerkId);
         }
       } catch (err) {
@@ -81,12 +83,12 @@ export function ConnectGoogleButton({clerkId}: ConnectGoogleButtonProps) {
         setLoading(false);
       }
     };
-    checkAuthStatus();
+    void checkAuthStatus();
   }, []);
 
 
   function handleSelectOpen() {
-    if (!loading && !isConnected) {
+    if (!loading && !isGoogleConnected) {
 
       authorizeGoogle();
     }
@@ -95,11 +97,11 @@ export function ConnectGoogleButton({clerkId}: ConnectGoogleButtonProps) {
   useEffect(() => {
     console.log("Selected calendar IDs:", selectedCalendarIds);
     if (selectedCalendarIds.length > 0) {
-      fetchEventsFromCalendars(selectedCalendarIds);
+      void fetchEventsFromCalendars(selectedCalendarIds);
     } else {
       setGcalEvents([]);
     }
-  }, [selectedCalendarIds]);
+  }, [selectedCalendarIds, setGcalEvents]);
 
   const fetchEventsFromCalendars = async (calendarIds: string[]) => {
     // const res = await fetch("http://localhost:5001/api/google/calendar/events/bulk", {
@@ -131,7 +133,8 @@ export function ConnectGoogleButton({clerkId}: ConnectGoogleButtonProps) {
       await unauthorizeGoogle();
       // Reset all state after unauthorizing
       setShowCalendarSelector(false)
-      setIsConnected(false);
+      setIsGoogleConnected(false);
+      setCmuCalendarId(null);
       setAvailableCalendars([]);
       setSelectedCalendarIds([]);
       setGcalEvents([]);
@@ -143,23 +146,28 @@ export function ConnectGoogleButton({clerkId}: ConnectGoogleButtonProps) {
   }
 
   const fetchCalendars = async (clerkId: string) => {
-    // need to change this to using the api client later
+    // Ensure CMUCal exists in user's Google Calendars. If not, create it.
+    try {
+      const calendarResult = await ensureCalendarExists(clerkId || "");
+      console.log("CMUCal calendar:", calendarResult.created ? "created" : "already exists", "ID:", calendarResult.calendar_id);
+      setCmuCalendarId(calendarResult.calendar_id);
+    } catch (error) {
+      console.error("Failed to ensure CMUCal calendar exists:", error);
+      alert("Failed to create CMUCal calendar. Event syncing may not work properly.");
+    }
+
+    // Fetch calendars list AFTER ensuring CMUCal exists so newly created calendar appears in the list
     const res = await fetch(`${API_BASE_URL}/google/calendars`, {
-      method: "GET", // optional but recommended for clarity
+      method: "GET",
       credentials: "include",
     });
 
-  
     if (res.status === 401) {
       // should add a screen to give them more information and ask if 
       // the user wants to connect their Google account
       window.location.href = `${API_BASE_URL}/google/authorize`;
       return;
     }
-
-    // Ensure CMUCal exists in user's Google Calendars. If not, create it.
-    // console.log("Ensuring CMUCal exists...", clerkId);
-    await ensureCalendarExists(clerkId || "");
   
     const data : CalendarFields[] = await res.json();
   
@@ -343,16 +351,16 @@ export function ConnectGoogleButton({clerkId}: ConnectGoogleButtonProps) {
       {/* Main Connect/Manage Button */}
       <button
         onClick={() => {
-          if (!loading && !isConnected) {
+          if (!loading && !isGoogleConnected) {
             authorizeGoogle();
-          } else if (isConnected) {
+          } else if (isGoogleConnected) {
             setShowCalendarSelector(true);
           }
         }}
         disabled={loading}
         className='h-10 px-4 py-2 text-sm font-medium border border-gray-300 rounded-lg bg-white dark:bg-gray-700 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
       >
-        {loading ? "Checking..." : isConnected ? "Manage Calendars" : "Connect Google Calendar"}
+        {loading ? "Checking..." : isGoogleConnected ? "Manage Calendars" : "Connect Google Calendar"}
       </button>
     </>
   );

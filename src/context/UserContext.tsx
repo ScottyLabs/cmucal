@@ -39,7 +39,25 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [eventsLoading, setEventsLoading] = useState(false);
   
   // Store visibility per schedule: { scheduleId: Set<categoryId> }
-  const [visibilityBySchedule, setVisibilityBySchedule] = useState<Map<string | number, Set<number>>>(new Map());
+  const [visibilityBySchedule, setVisibilityBySchedule] = useState<Map<string | number, Set<number>>>(() => {
+    // Load from localStorage on initial mount
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('categoryVisibility');
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved) as Record<string, number[]>;
+          const map = new Map<string | number, Set<number>>();
+          Object.entries(parsed).forEach(([key, value]) => {
+            map.set(key, new Set(value));
+          });
+          return map;
+        } catch (e) {
+          console.error('Failed to parse saved category visibility:', e);
+        }
+      }
+    }
+    return new Map();
+  });
   // Current active visibility set (updated after schedule loads)
   const [visibleCategories, setVisibleCategoriesState] = useState<Set<number>>(new Set());
   
@@ -72,11 +90,33 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         // After schedule loads, update visible categories
         const scheduleKey = data.schedule_id ?? currentScheduleId ?? 'default';
-        const savedVisibilities = visibilityBySchedule.get(scheduleKey);
+        
+        // Load fresh from localStorage to avoid stale state
+        let savedVisibilities: Set<number> | undefined;
+        if (typeof window !== 'undefined') {
+          const saved = localStorage.getItem('categoryVisibility');
+          if (saved) {
+            try {
+              const parsed = JSON.parse(saved) as Record<string, number[]>;
+              const categoryIds = parsed[String(scheduleKey)];
+              if (categoryIds) {
+                savedVisibilities = new Set(categoryIds);
+              }
+            } catch (e) {
+              console.error('Failed to parse saved category visibility:', e);
+            }
+          }
+        }
         
         if (savedVisibilities) {
           // Use saved visibilities if they exist
           setVisibleCategoriesState(savedVisibilities);
+          // Update the map state as well
+          setVisibilityBySchedule(prev => {
+            const newMap = new Map(prev);
+            newMap.set(scheduleKey, savedVisibilities);
+            return newMap;
+          });
         } else {
           // Default: all categories visible
           const allCategoryIds = new Set<number>();
@@ -84,10 +124,20 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
             org.categories.forEach(cat => allCategoryIds.add(cat.id));
           });
           setVisibleCategoriesState(allCategoryIds);
-          // Save default to map
+          // Save default to map and localStorage
           setVisibilityBySchedule(prev => {
             const newMap = new Map(prev);
             newMap.set(scheduleKey, allCategoryIds);
+            
+            // Persist to localStorage
+            if (typeof window !== 'undefined') {
+              const serializable: Record<string, number[]> = {};
+              newMap.forEach((value, key) => {
+                serializable[String(key)] = Array.from(value);
+              });
+              localStorage.setItem('categoryVisibility', JSON.stringify(serializable));
+            }
+            
             return newMap;
           });
         }
@@ -97,7 +147,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } finally {
       if (!silent) setLoading(false);
     }
-  }, [isLoaded, userId, currentScheduleId, visibilityBySchedule]);
+  }, [isLoaded, userId, currentScheduleId]);
 
   // Fetch schedule on mount and when currentScheduleId changes
   useEffect(() => {
@@ -158,6 +208,16 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setVisibilityBySchedule(prevMap => {
         const newMap = new Map(prevMap);
         newMap.set(scheduleKey, newSet);
+        
+        // Persist to localStorage
+        if (typeof window !== 'undefined') {
+          const serializable: Record<string, number[]> = {};
+          newMap.forEach((value, key) => {
+            serializable[String(key)] = Array.from(value);
+          });
+          localStorage.setItem('categoryVisibility', JSON.stringify(serializable));
+        }
+        
         return newMap;
       });
       

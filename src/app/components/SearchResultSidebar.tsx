@@ -299,7 +299,7 @@ export default function SearchResultsSidebar({ events, setEvents }: Props) {
               {savedEventIds.has(event.id) ? "Remove" : "Add"}
             </button>
             <button
-              onClick={() => openDetails(event.id)}
+              onClick={() => openDetails(event.id, event)}
               className="mt-2 mx-2 px-3 py-1.5 rounded-lg bg-gray-200 dark:bg-gray-700 dark:text-white hover:bg-gray-300 dark:hover:bg-gray-600">
               Learn more
             </button>

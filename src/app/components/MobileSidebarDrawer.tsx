@@ -37,9 +37,9 @@ export default function MobileSidebarDrawer({ children }: MobileSidebarDrawerPro
         },
       }}
     >
-      <div className="h-full bg-white dark:bg-gray-800 relative">
+      <div className="h-full bg-white dark:bg-gray-800 relative flex flex-col">
         {/* Close button */}
-        <div className="sticky top-0 z-10 bg-white dark:bg-gray-800 border-b border-gray-300 dark:border-gray-600 px-4 py-3 flex items-center justify-between">
+        <div className="flex-shrink-0 bg-white dark:bg-gray-800 border-b border-gray-300 dark:border-gray-600 px-4 py-3 flex items-center justify-between">
           <h2 className="text-lg font-semibold text-gray-800 dark:text-white">My Schedule</h2>
           <button
             onClick={() => setIsOpen(false)}
@@ -49,7 +49,7 @@ export default function MobileSidebarDrawer({ children }: MobileSidebarDrawerPro
             <FiX className="text-gray-600 dark:text-gray-300" size={24} />
           </button>
         </div>
-        <div className="overflow-y-auto h-[calc(100%-57px)]">
+        <div className="flex-1 min-h-0">
           {children}
         </div>
       </div>
