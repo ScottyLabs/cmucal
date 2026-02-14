@@ -68,6 +68,8 @@ export default function Home() {
                 event_id: eventId,
                 isSaved: isSaved,
                 categoryHidden: !isCategoryVisible,
+                org_id: event.org_id,
+                category_id: event.category_id,
               }
             });
           }
@@ -104,6 +106,8 @@ export default function Home() {
                 event_id: eventId,
                 isSaved: isSaved,
                 categoryHidden: !isCategoryVisible,
+                org_id: event.org_id,
+                category_id: event.category_id,
               }
             });
           }
