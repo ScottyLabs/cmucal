@@ -114,7 +114,7 @@ export const deleteCalendarSource = async (
   orgId: number,
   csId: number
 ): Promise<any> => {
-  return apiDelete(`/organizations/${orgId}/calendar-sources/${csId}`);
+  return apiDelete(`/organizations/${orgId}/calendar_sources/${csId}`);
 };
 
 // Category management

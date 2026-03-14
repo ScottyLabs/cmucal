@@ -122,7 +122,7 @@ export default function ManagerContent({ selectedOrg, onOrgDeleted }: Props) {
 
   // Derive current user's admin record and permissions
   const myAdmin = useMemo(
-    () => admins.find((a) => a.user_email === user?.primaryEmailAddress?.emailAddress),
+    () => admins.find((a) => a.clerk_id === user?.id),
     [admins, user]
   );
   const isAdmin = myAdmin?.role === "admin";

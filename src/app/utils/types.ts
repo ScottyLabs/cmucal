@@ -57,6 +57,7 @@ export interface Org {
 
 export interface AdminInOrg {
   user_id: number;
+  clerk_id: string | null;
   andrew_id: string;
   user_email: string;
   org_id: number;

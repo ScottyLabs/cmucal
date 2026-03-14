@@ -10,6 +10,7 @@ interface Props {
   selectedOrgId: number | null;
   allowedOrgIds: Set<number> | null;
   onOrgListChange?: (orgs: Org[]) => void;
+  refreshKey?: number;
 }
 
 export default function ManagerSidebar({
@@ -17,6 +18,7 @@ export default function ManagerSidebar({
   selectedOrgId,
   allowedOrgIds,
   onOrgListChange,
+  refreshKey,
 }: Props) {
   const [search, setSearch] = useState("");
   const [loadingOrgs, setLoadingOrgs] = useState(false);
@@ -46,7 +48,8 @@ export default function ManagerSidebar({
 
   useEffect(() => {
     fetchOrganizations();
-  }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [refreshKey]);
 
   return (
     <div className="h-[82vh]">

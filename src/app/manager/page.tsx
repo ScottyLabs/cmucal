@@ -15,6 +15,7 @@ export default function ManagerPage() {
   const { user } = useUser();
 
   const [selectedOrg, setSelectedOrg] = useState<Org | null>(null);
+  const [sidebarRefreshKey, setSidebarRefreshKey] = useState(0);
 
   useEffect(() => {
     if (!user?.id) return;
@@ -46,8 +47,8 @@ export default function ManagerPage() {
             handleOrgSelect={(org) => setSelectedOrg(org)}
             selectedOrgId={selectedOrg?.id ?? null}
             allowedOrgIds={managedOrgIds}
+            refreshKey={sidebarRefreshKey}
             onOrgListChange={(orgs) => {
-              // If the selected org was deleted, clear it
               if (selectedOrg && !orgs.find((o) => o.id === selectedOrg.id)) {
                 setSelectedOrg(null);
               }
@@ -57,7 +58,7 @@ export default function ManagerPage() {
         rightContent={
           <ManagerContent
             selectedOrg={selectedOrg}
-            onOrgDeleted={() => setSelectedOrg(null)}
+            onOrgDeleted={() => { setSelectedOrg(null); setSidebarRefreshKey((k) => k + 1); }}
           />
         }
       />
