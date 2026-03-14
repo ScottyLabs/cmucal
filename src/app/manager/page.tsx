@@ -1,44 +1,65 @@
 // src/app/manager/page.tsx
 "use client";
 import { useState, useEffect } from "react";
-import useRoleRedirect from "../utils/redirect";
+import { useMultipleRoleRedirect } from "../utils/redirect";
 import TwoColumnLayout from "../components/TwoColumnLayout";
-import { getUserRole } from "../utils/api/users";
 import { useUser } from "@clerk/nextjs";
-import { fetchRole } from "../utils/authService";
+import { getUserRole } from "../utils/api/users";
 import ManagerSidebar from "../components/ManagerSidebar";
 import ManagerContent from "../components/ManagerDashboard";
+import type { Org } from "../utils/types";
 
 export default function ManagerPage() {
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [managedOrgIds, setManagedOrgIds] = useState<Set<number> | null>(null);
   const { user } = useUser();
 
-  const [selectedOrgId, setSelectedOrgId] = useState<number | null>(null);
+  const [selectedOrg, setSelectedOrg] = useState<Org | null>(null);
 
   useEffect(() => {
-    if (!user?.id) return; 
+    if (!user?.id) return;
     const fetchUserRole = async () => {
-      const role = await fetchRole(user?.id);
-      setUserRole(role);
+      const response = await getUserRole(user.id);
+      if (response.is_manager) {
+        setUserRole("manager");
+      } else if (response.is_admin) {
+        setUserRole("admin");
+      } else {
+        setUserRole("user");
+      }
+      // Collect all org IDs the user manages or admins
+      const orgIds = new Set<number>(response.roles.map((r) => r.org_id));
+      setManagedOrgIds(orgIds);
     };
-    fetchUserRole();
+    void fetchUserRole();
   }, [user?.id]);
 
-  useRoleRedirect("manager", userRole); // Redirect non-managers
+  useMultipleRoleRedirect(["manager", "admin"], userRole); // Redirect non-managers
 
   if (!userRole) return <p>Finding user role...</p>;
-
-  const handleOrgSelect = (orgId: number) => {
-    setSelectedOrgId(orgId);
-  };
-
-
 
   return (
     <div className="flex h-[calc(100vh-65px)]">
       <TwoColumnLayout
-        leftContent={<ManagerSidebar handleOrgSelect={handleOrgSelect} selectedOrgId={selectedOrgId} />}
-        rightContent={<ManagerContent selectedOrgId={selectedOrgId} />}
+        leftContent={
+          <ManagerSidebar
+            handleOrgSelect={(org) => setSelectedOrg(org)}
+            selectedOrgId={selectedOrg?.id ?? null}
+            allowedOrgIds={managedOrgIds}
+            onOrgListChange={(orgs) => {
+              // If the selected org was deleted, clear it
+              if (selectedOrg && !orgs.find((o) => o.id === selectedOrg.id)) {
+                setSelectedOrg(null);
+              }
+            }}
+          />
+        }
+        rightContent={
+          <ManagerContent
+            selectedOrg={selectedOrg}
+            onOrgDeleted={() => setSelectedOrg(null)}
+          />
+        }
       />
     </div>
   );

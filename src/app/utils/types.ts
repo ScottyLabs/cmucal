@@ -267,6 +267,20 @@ export interface TagType {
 
 export type ReadIcalLinkResponse = { message: string; calendar_source_id: number };
 
+export interface CalendarSourceType {
+  id: number;
+  url: string;
+  active: boolean;
+  category_id: number | null;
+  notes: string | null;
+  default_event_type: string | null;
+  created_by_user_id: number | null;
+  last_sync_status: string | null;
+  last_fetched_at: string | null;
+  created_at: string | null;
+  updated_at: string | null;
+}
+
 
 
 export type LoginPayload = {

@@ -33,13 +33,13 @@ export const loginWithClerk = async (
   }
 };
 
-interface RoleResponse {
+export interface RoleResponse {
     is_manager: boolean;
     is_admin: boolean;
-    roles: [string, string][];
+    roles: { role: string; org_id: number }[];
 }
 
-export const getUserRole = (clerkId: string) => {
+export const getUserRole = (clerkId: string): Promise<RoleResponse> => {
     return apiGet<RoleResponse>("/users/get_role", {
         headers: { "Clerk-User-Id": clerkId },
     });
