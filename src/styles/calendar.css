@@ -78,7 +78,7 @@
 /* Full Day Events */
 /* full-day events, where allDay:true in events */
 .fc-event {
-  background-color: #182C4B;
+  background-color: var(--fc-event-bg-color, #182C4B);
   color: white;
   padding-left: 4px;
 }

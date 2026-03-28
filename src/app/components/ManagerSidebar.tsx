@@ -79,7 +79,9 @@ export default function ManagerSidebar({
       {/* Organization list */}
       <div className="mt-4 flex-1 overflow-y-auto space-y-3 px-4 pb-4">
         {loadingOrgs ? (
-          <p className="text-sm text-gray-500 px-1">Loading...</p>
+          Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="h-11 bg-gray-100 dark:bg-gray-800 rounded-xl animate-pulse" />
+          ))
         ) : (
           filteredOrgs.map((org) => (
             <button

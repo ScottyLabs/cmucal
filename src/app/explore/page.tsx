@@ -47,7 +47,7 @@ export default function ExplorePage() {
       <div className="flex h-full">
         {isMobile ? (
           // Mobile: Show search results as main view, calendar is on home page
-          <div className="w-full">
+          <div className="w-full h-full overflow-y-auto">
             {searchSidebar}
           </div>
         ) : (

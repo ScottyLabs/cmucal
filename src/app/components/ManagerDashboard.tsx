@@ -90,13 +90,11 @@ export default function ManagerContent({ selectedOrg, onOrgDeleted }: Props) {
 
   // Load all org data together when org selection changes
   useEffect(() => {
-    if (selectedOrgId === null) {
-      setAdmins([]);
-      setCalendarSources([]);
-      setEvents([]);
-      setCategories([]);
-      return;
-    }
+    setAdmins([]);
+    setCalendarSources([]);
+    setEvents([]);
+    setCategories([]);
+    if (selectedOrgId === null) return;
     setIsOrgLoading(true);
     void Promise.all([
       fetchAdmins(),
@@ -155,6 +153,10 @@ export default function ManagerContent({ selectedOrg, onOrgDeleted }: Props) {
     );
   }
 
+  if (isOrgLoading) {
+    return <OrgSkeleton />;
+  }
+
   return (
     <div className="h-[82vh] overflow-y-auto p-6 max-w-5xl">
       <h1 className="text-xl font-semibold mb-6">Manager Dashboard</h1>
@@ -193,7 +195,6 @@ export default function ManagerContent({ selectedOrg, onOrgDeleted }: Props) {
       <ICalSection
         calendarSources={calendarSources}
         categories={categories}
-        loading={isOrgLoading}
         allowedCategoryId={allowedCategoryId}
         onAdd={() => setShowAddIcal(true)}
         onToggle={async (cs) => {
@@ -213,7 +214,6 @@ export default function ManagerContent({ selectedOrg, onOrgDeleted }: Props) {
       <EventsSection
         events={filteredEvents}
         categories={categories}
-        loading={isOrgLoading}
         allowedCategoryId={allowedCategoryId}
         search={eventSearch}
         onSearchChange={setEventSearch}
@@ -297,6 +297,40 @@ export default function ManagerContent({ selectedOrg, onOrgDeleted }: Props) {
           setDeleteTarget(null);
         }}
       />
+    </div>
+  );
+}
+
+/* ---------- Loading Skeleton ---------- */
+
+function OrgSkeleton() {
+  return (
+    <div className="h-[82vh] overflow-y-auto p-6 max-w-5xl animate-pulse">
+      {/* Title */}
+      <div className="h-6 w-48 bg-gray-200 rounded mb-6" />
+      {/* Org name section */}
+      <div className="mb-8">
+        <div className="h-3 w-28 bg-gray-200 rounded mb-2" />
+        <div className="h-5 w-40 bg-gray-200 rounded" />
+      </div>
+      {/* Three table sections */}
+      {[4, 3, 5].map((rows, i) => (
+        <div key={i} className="mb-10">
+          <div className="flex items-center justify-between mb-3">
+            <div className="h-4 w-24 bg-gray-200 rounded" />
+            <div className="h-8 w-28 bg-gray-200 rounded-full" />
+          </div>
+          <div className="rounded-xl border overflow-hidden">
+            <div className="h-10 bg-gray-50 border-b" />
+            {Array.from({ length: rows }).map((_, j) => (
+              <div key={j} className="h-12 border-t bg-white flex items-center px-4 gap-4">
+                <div className="h-3 flex-1 bg-gray-100 rounded" />
+                <div className="h-3 w-24 bg-gray-100 rounded" />
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
@@ -444,7 +478,6 @@ function CategoriesSection({
 function ICalSection({
   calendarSources,
   categories,
-  loading,
   allowedCategoryId,
   onAdd,
   onToggle,
@@ -452,7 +485,6 @@ function ICalSection({
 }: {
   calendarSources: CalendarSourceType[];
   categories: Category[];
-  loading: boolean;
   allowedCategoryId: number | null;
   onAdd: () => void;
   onToggle: (cs: CalendarSourceType) => void;
@@ -489,13 +521,7 @@ function ICalSection({
             </tr>
           </thead>
           <tbody>
-            {loading ? (
-              <tr>
-                <td colSpan={4} className="px-4 py-6 text-center text-gray-400">
-                  Loading...
-                </td>
-              </tr>
-            ) : calendarSources.length === 0 ? (
+            {calendarSources.length === 0 ? (
               <tr>
                 <td colSpan={4} className="px-4 py-6 text-center text-gray-400">
                   No iCal links configured
@@ -548,7 +574,6 @@ function ICalSection({
 function EventsSection({
   events,
   categories,
-  loading,
   allowedCategoryId,
   search,
   onSearchChange,
@@ -556,7 +581,6 @@ function EventsSection({
 }: {
   events: EventOccurrence[];
   categories: Category[];
-  loading: boolean;
   allowedCategoryId: number | null;
   search: string;
   onSearchChange: (val: string) => void;
@@ -595,13 +619,7 @@ function EventsSection({
             </tr>
           </thead>
           <tbody>
-            {loading ? (
-              <tr>
-                <td colSpan={5} className="px-4 py-6 text-center text-gray-400">
-                  Loading...
-                </td>
-              </tr>
-            ) : events.length === 0 ? (
+            {events.length === 0 ? (
               <tr>
                 <td colSpan={5} className="px-4 py-6 text-center text-gray-400">
                   No events found
