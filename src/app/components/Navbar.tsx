@@ -46,6 +46,7 @@ export default function Navbar() {
   const newScheduleRef = useRef<HTMLDivElement | null>(null);
 
   const [schedules, setSchedules] = useState<Array<{id: number, name: string}>>([]);
+  const [schedulesLoading, setSchedulesLoading] = useState(true);
   const [showNewScheduleInput, setShowNewScheduleInput] = useState(false);
   const [newScheduleName, setNewScheduleName] = useState('');
   const [userRole, setUserRole] = useState<string | null>(null);
@@ -207,6 +208,8 @@ export default function Navbar() {
         }
       } catch (error) {
         console.error("Error fetching user data:", error);
+      } finally {
+        setSchedulesLoading(false);
       }
     };
 
@@ -237,13 +240,11 @@ export default function Navbar() {
   }
   // Render navbar immediately, show skeleton for schedule selector
   // Only show loading if we haven't fetched userId yet, or if we have schedules but no currentScheduleId
-  const isLoading = !userId || (schedules.length > 0 && currentScheduleId === null);
+  const isLoading = schedulesLoading || (schedules.length > 0 && currentScheduleId === null);
 
   const handleAdminDashboardRedirect = () => {
-    if (userRole === "manager") {
+    if (userRole === "manager" || userRole === "admin") {
       router.push("/manager");
-    } else if (userRole === "admin") {
-      router.push("/admin");
     } else {
       router.push("/"); // fallback
     }

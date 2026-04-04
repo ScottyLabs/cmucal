@@ -3,32 +3,42 @@
 import { useEffect, useState, useMemo } from "react";
 import { FiSearch } from "react-icons/fi";
 import { getAllOrganizations } from "../utils/api/organizations";
+import { Org } from "../utils/types";
 
 interface Props {
-  handleOrgSelect: (orgId: number) => void;
+  handleOrgSelect: (org: Org) => void;
   selectedOrgId: number | null;
+  allowedOrgIds: Set<number> | null;
+  onOrgListChange?: (orgs: Org[]) => void;
+  refreshKey?: number;
 }
 
 export default function ManagerSidebar({
   handleOrgSelect,
   selectedOrgId,
+  allowedOrgIds,
+  onOrgListChange,
+  refreshKey,
 }: Props) {
   const [search, setSearch] = useState("");
   const [loadingOrgs, setLoadingOrgs] = useState(false);
-  const [organizations, setOrganizations] = useState<any[]>([]);
+  const [organizations, setOrganizations] = useState<Org[]>([]);
 
   const filteredOrgs = useMemo(() => {
-    return organizations.filter((org) =>
+    const visible = allowedOrgIds
+      ? organizations.filter((org) => allowedOrgIds.has(org.id))
+      : organizations;
+    return visible.filter((org) =>
       org.name.toLowerCase().includes(search.toLowerCase()),
     );
-  }, [organizations, search]);
+  }, [organizations, search, allowedOrgIds]);
 
   const fetchOrganizations = async () => {
     setLoadingOrgs(true);
     try {
       const orgs = await getAllOrganizations();
-      console.log("Fetched organizations:", orgs);
       setOrganizations(orgs);
+      onOrgListChange?.(orgs);
     } catch (error) {
       console.error("Failed to fetch organizations:", error);
     } finally {
@@ -38,7 +48,8 @@ export default function ManagerSidebar({
 
   useEffect(() => {
     fetchOrganizations();
-  }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [refreshKey]);
 
   return (
     <div className="h-[82vh]">
@@ -47,9 +58,6 @@ export default function ManagerSidebar({
         <h2 className="text-sm font-semibold text-gray-700">
           All Organizations
         </h2>
-        <button className="text-sm font-medium text-blue-600 hover:underline">
-          Add
-        </button>
       </div>
 
       {/* Search */}
@@ -70,11 +78,16 @@ export default function ManagerSidebar({
 
       {/* Organization list */}
       <div className="mt-4 flex-1 overflow-y-auto space-y-3 px-4 pb-4">
-        {filteredOrgs.map((org) => (
+        {loadingOrgs ? (
+          Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="h-11 bg-gray-100 dark:bg-gray-800 rounded-xl animate-pulse" />
+          ))
+        ) : (
+          filteredOrgs.map((org) => (
             <button
               key={org.id}
               type="button"
-              onClick={() => handleOrgSelect(org.id)}
+              onClick={() => handleOrgSelect(org)}
               className={`text-left cursor-pointer rounded-xl border px-4 py-3 text-sm font-medium w-full  ${
                 selectedOrgId === org.id
                   ? "border-gray-500 bg-gray-100 text-gray-700"
@@ -83,7 +96,8 @@ export default function ManagerSidebar({
             >
               {org.name}
             </button>
-          ))}
+          ))
+        )}
       </div>
     </div>
   );

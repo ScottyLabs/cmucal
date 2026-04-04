@@ -27,7 +27,7 @@ const Accordion: React.FC<AccordionProps> = ({ title, subtitle, children, onRemo
     <div className="">
       <div className="flex justify-between items-center py-2 cursor-pointer" onClick={() => setIsOpen(!isOpen)}>
         <div className="flex items-center">
-            <span className={`w-2 h-2 rounded-full mr-3 ${colorClasses[color]}`}></span>
+            <span className={`w-2 h-2 rounded-full mr-3 flex-shrink-0 ${colorClasses[color]}`}></span>
             <div>
                 <h3 className="font-medium text-base">{title}</h3>
                 {subtitle && <p className="text-sm text-gray-500">{subtitle}</p>}

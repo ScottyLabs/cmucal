@@ -1,5 +1,5 @@
-import { apiGet, apiPost } from "./api";
-import { AdminInOrg, ClubOrganization, CourseOption, Org, Course, Club } from "../types";
+import { apiGet, apiPost, apiPatch, apiDelete } from "./api";
+import { AdminInOrg, ClubOrganization, CourseOption, Org, Course, Club, CalendarSourceType } from "../types";
 
 
 export const getClubOrganizations = async (): Promise<ClubOrganization[]> => {
@@ -56,4 +56,86 @@ export const getOrganizationData = async (
   return apiGet<Course | Club>(`/organizations/org/${orgId}`, {
     headers: { "Clerk-User-Id": userId },
   });
+};
+
+// Admin management
+export const bulkCreateAdmins = async (
+  userEmails: string,
+  organizationName: string,
+  role: string = "admin"
+): Promise<any> => {
+  return apiPost("/organizations/bulk_create_admins", {
+    user_emails: userEmails,
+    organization_name: organizationName,
+    role,
+  });
+};
+
+export const updateAdmin = async (
+  userId: number,
+  orgId: number,
+  role?: string,
+  categoryId?: number
+): Promise<any> => {
+  return apiPatch("/organizations/update_admin", {
+    user_id: userId,
+    org_id: orgId,
+    role,
+    category_id: categoryId,
+  });
+};
+
+export const deleteAdmin = async (
+  userId: number,
+  orgId: number
+): Promise<any> => {
+  return apiDelete("/organizations/delete_admin", {
+    data: { user_id: userId, org_id: orgId },
+  });
+};
+
+// Calendar source management
+export const getCalendarSources = async (
+  orgId: number
+): Promise<{ calendar_sources: CalendarSourceType[] }> => {
+  return apiGet<{ calendar_sources: CalendarSourceType[] }>(
+    `/organizations/${orgId}/calendar_sources`
+  );
+};
+
+export const toggleCalendarSource = async (
+  orgId: number,
+  csId: number
+): Promise<{ id: number; active: boolean; updated_at: string }> => {
+  return apiPatch(`/organizations/${orgId}/calendar_sources/${csId}`, {});
+};
+
+export const deleteCalendarSource = async (
+  orgId: number,
+  csId: number
+): Promise<any> => {
+  return apiDelete(`/organizations/${orgId}/calendar_sources/${csId}`);
+};
+
+// Category management
+export const createCategory = async (
+  orgId: number,
+  name: string
+): Promise<{ category_id: number }> => {
+  return apiPost<{ category_id: number }, { org_id: number; name: string }>(
+    "/organizations/create_category",
+    { org_id: orgId, name }
+  );
+};
+
+export const deleteCategory = async (
+  orgId: number,
+  catId: number
+): Promise<void> => {
+  await apiDelete(`/organizations/${orgId}/categories/${catId}`);
+};
+
+// Organization management
+export const deleteOrganization = async (orgId: number): Promise<void> => {
+  return apiDelete(`/organizations/${orgId}`);
 };

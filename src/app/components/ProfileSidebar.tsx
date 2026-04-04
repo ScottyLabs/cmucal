@@ -230,7 +230,7 @@ const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
         <div className="flex justify-between items-center mb-2">
           <div className="flex items-center cursor-pointer" onClick={() => setIsCoursesOpen(!isCoursesOpen)}>
             <h3 className="text-gray-600 dark:text-gray-400 mr-2">My Courses</h3>
-            {isCoursesOpen ? <FiChevronUp className="w-5 h-5 text-gray-600" /> : <FiChevronDown className="w-5 h-5 text-gray-600" />}
+            {isCoursesOpen ? <FiChevronUp className="w-5 h-5 text-gray-600 flex-shrink-0" /> : <FiChevronDown className="w-5 h-5 text-gray-600 flex-shrink-0" />}
           </div>
           <div className="flex items-center">
             <button
@@ -355,7 +355,7 @@ const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
         <div className="flex justify-between items-center mb-2">
           <div className="flex items-center cursor-pointer" onClick={() => setIsClubsOpen(!isClubsOpen)}>
             <h3 className="text-gray-600 dark:text-gray-400 mr-2">My Clubs</h3>
-            {isClubsOpen ? <FiChevronUp className="w-5 h-5 text-gray-600" /> : <FiChevronDown className="w-5 h-5 text-gray-600" />}
+            {isClubsOpen ? <FiChevronUp className="w-5 h-5 text-gray-600 flex-shrink-0" /> : <FiChevronDown className="w-5 h-5 text-gray-600 flex-shrink-0" />}
           </div>
           <div className="flex items-center">
             <button
